@@ -12,9 +12,9 @@ setup.subid='test';
 % setup.headcircumference=.59;     % JZ=.56
 % setup.headheight=.225;           % JZ=.215
 
-setup.vlocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.alocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
+setup.vlocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.alocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.lj=1;  % =1 for yes use Labjack, and =0 for no don't use Labjack
 
 setup.paradigm='cued'; % 'nocue' or 'cued'
 setup.cuetype='aud'; % aud or vis
@@ -39,7 +39,7 @@ stim.audio.stim='brownnoise'; % 'tone' or 'whitenoise' or 'noisytone'
 stim.backepi=0; % is background EPI noise playing?
 stim.audio.type='MIT'; % 'ITD' or 'ILD' or 'ILDITD' or 'cipic' or 'MIT' or 'rec'
 
-stim.loc=sort([-1 1]); % degrees; rest of code assumes this is sorted left to right
+stim.loc=sort([-1.5 1.5]); % degrees; rest of code assumes this is sorted left to right
 
 stim.feedback=[0 0];  % [0 0] for no feedback; [X Y] means skip X trials then do feedback based on Y trials
 

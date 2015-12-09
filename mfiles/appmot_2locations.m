@@ -403,7 +403,7 @@ switch stim.block
             learrwav_resamp=resample(learrwav,stim.audio.freq,fs);
             rearlwav_resamp=resample(rearlwav,stim.audio.freq,fs);
             rearrwav_resamp=resample(rearrwav,stim.audio.freq,fs);
-          elseif any(max(stim.loc)==1:10)
+          elseif any(max(stim.loc)==0.5:0.5:15)
             %             interpolate_hrir('mit', stim.audio.freq, [-10:1:10], 0, 1); % called this way to create file loaded below
             load([mitdir(1:end-6) 'normal_hrir_interpolated_el0.mat']);
 %             if ~all(azimuth_int==[-10:10]) 
