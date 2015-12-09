@@ -6,14 +6,16 @@ clear all;
 
 %% changeable params per experiment
 
-setup.subid='p100';
+setup.subid='test';
 % setup.headwidth=.155; % in m     % JZ=.145        % These 4 params were used by Rohe 2015 with CIPIC
 % setup.headdepth=.195;             % JZ=.18
 % setup.headcircumference=.59;     % JZ=.56
 % setup.headheight=.225;           % JZ=.215
 
-setup.vlocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.alocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.vlocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.alocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
+
 setup.paradigm='cued'; % 'nocue' or 'cued'
 setup.cuetype='aud'; % aud or vis
 stim.cueprob=[3/10 6/10]; % only for 'cued' condition; percentages (0-1) of congruency likelihood % cue percentages best if such that numerators stay small  (e.g. not 7/10)
@@ -56,6 +58,18 @@ else
 end
 
 % setup.avaudalone=.1; %  percentage of trials: should an AV block also contain some auditory only trials?
+
+%% Open labjack
+
+if setup.lj
+  if ~exist('lj')
+    lj = labJack('deviceID', 3, 'verbose', true); %open a U3 with verbose logging on
+  end
+  if strfind(lj.version,'FAILED')
+    error('opening labjack failed');
+  end
+end
+
 
 %% Paths
 % Debug mode
@@ -547,7 +561,11 @@ end
 
 
 %% run experiment
-[resp,stim,setup] = appmot_2locations(setup,stim);
+if setup.lj
+  [resp,stim,setup] = appmot_2locations(setup,stim,lj);
+else
+  [resp,stim,setup] = appmot_2locations(setup,stim);
+end  
 
 if setup.save
   save([setup.subid '_' stim.block '_' resp.timestamp],'setup','stim','resp');

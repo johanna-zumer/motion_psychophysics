@@ -1,10 +1,14 @@
-function [resp,stim,setup] = appmot_2locations(setup,stim)
+function [resp,stim,setup] = appmot_2locations(setup,stim,varargin)
 
+%% Labjack
+if setup.lj && ~isempty(varargin)
+  lj=varargin{1};
+end
 
 %% screen
 
 if setup.debug
-   PsychDebugWindowConfiguration % use transparent screen
+  PsychDebugWindowConfiguration % use transparent screen
   Screen('Preference', 'SkipSyncTests', 1); % skip screen synchronization, otherwise error due to PTB debug mode
   setup.old.verb = Screen('Preference', 'Verbosity', 1); % print only errors
 else
@@ -68,7 +72,7 @@ try
   [fixWidth,lineWidth] = deal(round(posdeg2pix(1.6,setup.mon.dist,setup.screenres)),...
     round(posdeg2pix(0.1,setup.mon.dist,S.screenres)));
 catch
-   warning('ask Mate for posdeg2pix')
+  warning('ask Mate for posdeg2pix')
   fixWidth=0.5;
   lineWidth=0.1;
 end
@@ -120,7 +124,7 @@ switch stim.block
     elseif strcmpi(setup.name,'COLLES-140561') || strcmpi(setup.name,'PSYCHL-132432')% NOT RECOMMENDED FOR EEG!!!
       warning('Psychophysics only, not EEG!');
       latBias = -0.025;
-    elseif strcmpi(setup.name,'NopBook03.local') || strcmpi(setup.name,'NopBook2.local')      
+    elseif strcmpi(setup.name,'NopBook03.local') || strcmpi(setup.name,'NopBook2.local')
       switch setup.alocation
         case 'meg'
           latBias = -0.009;
@@ -128,8 +132,8 @@ switch stim.block
           latBias = -0.016;
       end
     elseif strcmpi(setup.name,'PPPMEGSTIM')
-        latBias = -0.008;  
-        warning('Test PPPMEGSTIM timing')
+      latBias = -0.008;
+      warning('Test PPPMEGSTIM timing')
     else
       warning('Unrecognized setup, stimulus timing might be inaccurate! ');
       latBias = 0;
@@ -197,14 +201,14 @@ switch stim.block
           catch
             brownnoise=load('/Users/zumerj/Documents/MATLAB/sounds_wavfiles/brownnoise.mat');
             addpath(genpath('/Applications/MATLAB_R2011b.app/toolbox/signal/signal/'))
-          end          
+          end
           brownresamp=resample(brownnoise.y,stim.audio.freq,brownnoise.Fs);
           audstim=brownresamp(1:round(stim.dur(dur)*stim.audio.freq));
         otherwise
           error('please specify appropriate auditory stimulus type')
       end
       
-     switch stim.audio.type
+      switch stim.audio.type
         case {'ILD' 'ILDITD'}
           audstimfft=fft(audstim,4*length(audstim));
           freq=linspace(0,stim.audio.freq/2,length(audstimfft)/2);
@@ -232,12 +236,12 @@ switch stim.block
       % (:,1) is left channel; (:,2) is right channel
       switch stim.audio.type
         case {'ITD' 'ILD' 'ILDITD'}
-%           stim.audio.right{dur}(:,1) = [zeros(timeshift, 1); audstim(1:end-timeshift)];
-%           stim.audio.right{dur}(:,2) = audstim;
-%           stim.audio.left{dur}(:,1) = audstim;
-%           stim.audio.left{dur}(:,2) = [zeros(timeshift, 1); audstim(1:end-timeshift)];
-%           stim.audio.centre{dur}(:,1:2) = repmat(audstim, 1, 2);
-
+          %           stim.audio.right{dur}(:,1) = [zeros(timeshift, 1); audstim(1:end-timeshift)];
+          %           stim.audio.right{dur}(:,2) = audstim;
+          %           stim.audio.left{dur}(:,1) = audstim;
+          %           stim.audio.left{dur}(:,2) = [zeros(timeshift, 1); audstim(1:end-timeshift)];
+          %           stim.audio.centre{dur}(:,1:2) = repmat(audstim, 1, 2);
+          
           stim.audio.left{dur}(:,1) = audstimlear(:,1); % left ear; left sound
           stim.audio.left{dur}(:,2) = [zeros(timeshift, 1); audstimrear(1:end-timeshift,1)]; % right ear; left sound
           stim.audio.right{dur}(:,1) = [zeros(timeshift, 1); audstimlear(1:end-timeshift,2)]; % left ear; right sound
@@ -260,14 +264,14 @@ switch stim.block
           T = (0:(1/fs):((200-1)/fs))*1000;      % Times in ms
           euse=dsearchn(E',0);  % elevation zero degrees
           ause=dsearchn(A',stim.loc');  % elevation zero degrees
-
+          
           xsub=nan(1,17);
           xsub(1)= setup.headwidth;
           xsub(2)= setup.headheight;
           xsub(3)= setup.headdepth;
           xsub(16) = setup.headcircumference;
           xsub=xsub*100; % convert m to cm
-
+          
           % cipic was made at 1m distance. subtract off delay in hrir for this distance if different than from screen.
           hrirshift=(1-setup.mon.dist/100)/stim.ITD.soundspeed; % time (s) to cut off hrir.  if negative, then add it on as padding
           % but hrirshift is too large!  1.5ms
@@ -282,14 +286,14 @@ switch stim.block
           
           % 'standard' for volume calibration
           hrir061=load([cdir 'standard_hrir_database\subject_061\hrir_final.mat']);
- 
+          
           % Volume across different database participants is not equal.
           % Must normalise first, to be equivalent to other audio.types
           if 1
             hrir.hrir_r(ause,euse,:)=hrir.hrir_r(ause,euse,:).*repmat(rms(rms(hrir061.hrir_r(ause,euse,:),3))./rms(rms(hrir.hrir_r(ause,euse,:),3)),[2 1 200]);
             hrir.hrir_l(ause,euse,:)=hrir.hrir_l(ause,euse,:).*repmat(rms(rms(hrir061.hrir_l(ause,euse,:),3))./rms(rms(hrir.hrir_l(ause,euse,:),3)),[2 1 200]);
-
-          else  % this had been created using recordings but then didn't perceptually work    
+            
+          else  % this had been created using recordings but then didn't perceptually work
             switch hrir.name
               case 'subject_003'
                 stim.audio.vol=1.6*stim.audio.vol; % 1.9
@@ -357,7 +361,7 @@ switch stim.block
           learrstim=learrstim(cutconv+1:cutconv+length(audstim));
           rearrstim=conv(audstim,resample(squeeze(hrir.hrir_r(ause(2),euse,:)),stim.audio.freq,fs));
           rearrstim=rearrstim(cutconv+1:cutconv+length(audstim));
-
+          
           stim.audio.left{dur}(:,1) = learlstim;
           stim.audio.left{dur}(:,2) = rearlstim;
           stim.audio.right{dur}(:,1) = learrstim;
@@ -366,7 +370,7 @@ switch stim.block
         case 'MIT'
           
           switch setup.name
-            case 'PSYCHL-132432' 
+            case 'PSYCHL-132432'
               mitdir='D:\motion_psychophysics\mit_hrtf\elev0\';
             case 'COLLES-140591'
               mitdir='C:\Users\zumerj\Documents\motion_psychophysics\mit_hrtf\elev0\';
@@ -377,7 +381,7 @@ switch stim.block
             otherwise
               error('where is MIT HRTF on this computer?')
           end
-
+          
           % L is 'normal' size pinna; 'R' is 2*std larger sized pinna
           if max(stim.loc)==10
             learlwav=audioread([mitdir 'L0e350a.wav']);
@@ -400,38 +404,39 @@ switch stim.block
             rearlwav_resamp=resample(rearlwav,stim.audio.freq,fs);
             rearrwav_resamp=resample(rearrwav,stim.audio.freq,fs);
           elseif any(max(stim.loc)==1:10)
-%             interpolate_hrir('mit', stim.audio.freq, [-10:1:10], 0, 1); % called this way to create file loaded below
+            %             interpolate_hrir('mit', stim.audio.freq, [-10:1:10], 0, 1); % called this way to create file loaded below
             load([mitdir(1:end-6) 'normal_hrir_interpolated_el0.mat']);
-            if ~all(azimuth_int==[-10:10])
+%             if ~all(azimuth_int==[-10:10]) 
+            if ~all(azimuth_int==[-15:0.5:15]) 
               error('this MIT interp file is not expected')
             end
             learlwav_resamp=hrirL_int(:,dsearchn(azimuth_int',min(stim.loc)));
             learrwav_resamp=hrirL_int(:,dsearchn(azimuth_int',max(stim.loc)));
             rearlwav_resamp=hrirR_int(:,dsearchn(azimuth_int',min(stim.loc)));
             rearrwav_resamp=hrirR_int(:,dsearchn(azimuth_int',max(stim.loc)));
-          else 
+          else
             error('MIT hrtf only has angles in multiples of 5; interpolate to your desired azimuth')
           end
-%           if max(stim.loc)==10
-%             learlwav=audioread([mitdir 'R0e010a.wav']);
-%             rearlwav=audioread([mitdir 'R0e350a.wav']);
-%             learrwav=audioread([mitdir 'R0e350a.wav']); % instead of L0e010a, as recommended by documentation
-%             [rearrwav,fs]=audioread([mitdir 'R0e010a.wav']);
-%           elseif max(stim.loc)==5
-%             learlwav=audioread([mitdir 'R0e005a.wav']);
-%             rearlwav=audioread([mitdir 'R0e355a.wav']);
-%             learrwav=audioread([mitdir 'R0e355a.wav']); % instead of L0e010a, as recommended by documentation
-%             [rearrwav,fs]=audioread([mitdir 'R0e005a.wav']);
-%           else
-%             error('MIT hrtf only has angles in multiples of 5')
-%           end
-
-switch stim.audio.freq
-  case 96000
-    cutconv=80;
-  otherwise
-    error('give another cutconv value')
-end
+          %           if max(stim.loc)==10
+          %             learlwav=audioread([mitdir 'R0e010a.wav']);
+          %             rearlwav=audioread([mitdir 'R0e350a.wav']);
+          %             learrwav=audioread([mitdir 'R0e350a.wav']); % instead of L0e010a, as recommended by documentation
+          %             [rearrwav,fs]=audioread([mitdir 'R0e010a.wav']);
+          %           elseif max(stim.loc)==5
+          %             learlwav=audioread([mitdir 'R0e005a.wav']);
+          %             rearlwav=audioread([mitdir 'R0e355a.wav']);
+          %             learrwav=audioread([mitdir 'R0e355a.wav']); % instead of L0e010a, as recommended by documentation
+          %             [rearrwav,fs]=audioread([mitdir 'R0e005a.wav']);
+          %           else
+          %             error('MIT hrtf only has angles in multiples of 5')
+          %           end
+          
+          switch stim.audio.freq
+            case 96000
+              cutconv=80;
+            otherwise
+              error('give another cutconv value')
+          end
           learlstim=conv(audstim,learlwav_resamp);
           learlstim=learlstim(cutconv+1:cutconv+length(audstim));
           rearlstim=conv(audstim,rearlwav_resamp);
@@ -441,17 +446,17 @@ end
           learrstim=learrstim(cutconv+1:cutconv+length(audstim));
           rearrstim=conv(audstim,rearrwav_resamp);
           rearrstim=rearrstim(cutconv+1:cutconv+length(audstim));
-
-%           learlstim=conv(audstim,resample(learlwav,stim.audio.freq,fs));
-%           learlstim=learlstim(cutconv+1:cutconv+length(audstim));
-%           rearlstim=conv(audstim,resample(rearlwav,stim.audio.freq,fs));
-%           rearlstim=rearlstim(cutconv+1:cutconv+length(audstim));
-%           
-%           learrstim=conv(audstim,resample(learrwav,stim.audio.freq,fs));
-%           learrstim=learrstim(cutconv+1:cutconv+length(audstim));
-%           rearrstim=conv(audstim,resample(rearrwav,stim.audio.freq,fs));
-%           rearrstim=rearrstim(cutconv+1:cutconv+length(audstim));
-
+          
+          %           learlstim=conv(audstim,resample(learlwav,stim.audio.freq,fs));
+          %           learlstim=learlstim(cutconv+1:cutconv+length(audstim));
+          %           rearlstim=conv(audstim,resample(rearlwav,stim.audio.freq,fs));
+          %           rearlstim=rearlstim(cutconv+1:cutconv+length(audstim));
+          %
+          %           learrstim=conv(audstim,resample(learrwav,stim.audio.freq,fs));
+          %           learrstim=learrstim(cutconv+1:cutconv+length(audstim));
+          %           rearrstim=conv(audstim,resample(rearrwav,stim.audio.freq,fs));
+          %           rearrstim=rearrstim(cutconv+1:cutconv+length(audstim));
+          
           stim.audio.left{dur}(:,1) = learlstim;
           stim.audio.left{dur}(:,2) = rearlstim;
           stim.audio.right{dur}(:,1) = learrstim;
@@ -470,8 +475,8 @@ end
         cuetones(:,1,:)=sin(2*pi*setup.cuefreq'*(1/stim.audio.freq:1/stim.audio.freq:setup.cueduration))';
         cuetones=repmat(cuetones,[1 2 1]);
       end
-          
-          %     stim.audio.loc(:,:,i) = stim.audio.loc(:,:,i) / max(max(abs(stim.audio.loc(:,:,i)))); % normalize to be within [-1 1]
+      
+      %     stim.audio.loc(:,:,i) = stim.audio.loc(:,:,i) / max(max(abs(stim.audio.loc(:,:,i)))); % normalize to be within [-1 1]
       stim.audio.left{dur} = stim.audio.left{dur} / max(abs(stim.audio.left{dur}(:))); % normalize to be within [-1 1]
       stim.audio.right{dur} = stim.audio.right{dur} / max(abs(stim.audio.right{dur}(:))); % normalize to be within [-1 1]
       stim.audio.centre{dur} = stim.audio.centre{dur} / max(abs(stim.audio.centre{dur}(:))); % normalize to be within [-1 1]
@@ -586,6 +591,12 @@ loc3Key = KbName('l');    % corresponding to 'distinct' or 'different'
 loc4Key = KbName('s');    % corresponding to motion to the left
 loc5Key = KbName('f');    % corresponding to motion to the right
 loc6Key = KbName('d');    % corresponding to centretest
+
+if setup.lj
+  % trigger start of expt
+  lj.prepareStrobe(7) %prepare a strobed word with value 7
+  lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+end
 
 % test headphones
 if setup.includeintro
@@ -726,6 +737,11 @@ if setup.includeintro
   end
 end
 
+if setup.lj
+  lj.prepareStrobe(6) %prepare a strobed word
+  lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+end
+
 
 % Reminding of key responses
 flipcnt=0;
@@ -818,11 +834,21 @@ switch stim.block
 end
 
 
+if setup.lj
+  lj.prepareStrobe(5) %prepare a strobed word
+  lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+end
 
 % loop through trials
 try
   resp.stimstart=nan(1,ntrials);
   for itrial=1:ntrials
+    
+    if setup.lj
+      % Trial start
+      lj.prepareStrobe(20) %prepare a strobed word
+      lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+    end
     
     switch stim.block
       case 'av'
@@ -839,14 +865,18 @@ try
           case 'av'
             if stim.av.atrialseq(itrial)==2 % 2 for start on right, move to left
               audstim=stim.audio.movleft{stim.durseq(itrial),stim.isiseq(itrial)}';
+              if setup.lj, ljaudstim=32; end
             elseif stim.av.atrialseq(itrial)==1 % 1 for start on left, move to right
               audstim=stim.audio.movright{stim.durseq(itrial),stim.isiseq(itrial)}';
+              if setup.lj, ljaudstim=31; end
             end
           case 'audonly'
             if stim.audio.trialseq(itrial)==2 % 2 for start on right, move to left
               audstim=stim.audio.movleft{stim.durseq(itrial),stim.isiseq(itrial)}';
+              if setup.lj, ljaudstim=32; end
             elseif stim.audio.trialseq(itrial)==1 % 1 for start on left, move to right
               audstim=stim.audio.movright{stim.durseq(itrial),stim.isiseq(itrial)}';
+              if setup.lj, ljaudstim=31; end
             end
         end
     end
@@ -889,6 +919,11 @@ try
         switch setup.cuetype
           case 'aud'
             PsychPortAudio('Start',pamaster,[],resp.stimstart(itrial)-0.5*setup.ifi);
+            if setup.lj
+              % 21 for cue 1 (setup.cuefreq(1)) and 22 for cue 2 (setup.cuefreq(2))
+              lj.prepareStrobe(20+stim.av.cueseq(itrial)) %prepare a strobed word
+              lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+            end
             resp.time_startcue(itrial)=resp.stimstart(itrial)-0.5*setup.ifi;
             %           WaitSecs(setup.cueduration);
             %           resp.time_endcue(itrial)=GetSecs;
@@ -900,7 +935,7 @@ try
             WaitSecs(setup.cueduration);
             %           Screen('DrawText', win, setup.cuesym(stim.av.cueseq(itrial)), win_center_x-shifttext, win_center_y);
             [resp.time_endcue(itrial),~,~,missed]=Screen('Flip',win);
-            warning('take this resp.time_enduce into account for timing?')
+            warning('take this resp.time_endcue into account for timing?')
             WaitSecs(setup.postcue);
         end
       otherwise
@@ -930,6 +965,11 @@ try
       case {'av' 'audonly'}
         PsychPortAudio('Start',pamaster,[],resp.stimstart(itrial)-0.5*setup.ifi+time_aud);
         resp.timeaudOnset(itrial)=resp.stimstart(itrial)-0.5*setup.ifi+time_aud;
+        if setup.lj
+          % 31 for aud moving right; 32 for aud moving left
+          lj.prepareStrobe(ljaudstim) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
     end
     
     switch stim.block
@@ -956,6 +996,11 @@ try
         [resp.tvbl_vis1on(itrial),resp.visonset(itrial),~,missed] = Screen('Flip',win,resp.stimstart(itrial)-0.5*setup.ifi+time_vis);
         %       if missed,    flipmiss(itrial)=flipmiss(itrial)+1;      end  % although this doesn't matter because by definition it will have missed the deadline of 0.5*setup.ifi prior to when we actually want it.
         %       resp.stimstart(itrial)+time_vis-resp.tvbl_vis1on(itrial)
+        if setup.lj
+          % 41 for vis dot first on left (moving right); 42 for vis dot first on right (moving left); % 40 for no visual stim
+          lj.prepareStrobe(40+vistrial) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
         
         %       while GetSecs<resp.stimstart(itrial)+time_vis+stim.dur-0.0015
         %       end
@@ -979,6 +1024,15 @@ try
         [resp.tvbl_vis2on(itrial),~,~,missed] = Screen('Flip',win,resp.stimstart(itrial)+time_vis-0.5*setup.ifi+stim.dur(stim.durseq(itrial))+stim.isi(stim.isiseq(itrial)));
         %       if missed,    flipmiss(itrial)=flipmiss(itrial)+1;      end
         %       resp.stimstart(itrial)+time_vis+stim.dur(stim.durseq(itrial))+stim.isi(stim.isiseq(itrial))-tvbl_vis2on
+        if setup.lj
+          % 43 for vis dot second on right (moving right); 44 for vis dot second on left (moving left); % 40 for no visual stim
+          if vistrial>0
+            lj.prepareStrobe(42+vistrial) %prepare a strobed word
+          else
+            lj.prepareStrobe(40) %prepare a strobed word
+          end
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
         
         %       while GetSecs<resp.stimstart(itrial)+time_vis+stim.dur(stim.durseq(itrial))+stim.isi(stim.isiseq(itrial))+stim.dur(stim.durseq(itrial))-0.0015
         %       end
@@ -993,6 +1047,11 @@ try
     if any(keycodef([loc1Key,loc2Key,loc3Key,loc4Key,loc5Key]))
       Screen('DrawText', win, 'you pressed too fast', win_center_x-shifttext, win_center_y);
       [tvbl_fastpress,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+time_vis-0.5*setup.ifi+stim.dur(stim.durseq(itrial))+stim.isi(stim.isiseq(itrial))+stim.dur(stim.durseq(itrial))+setup.pauseb4q1);
+      if setup.lj
+        % pressed too fast
+        lj.prepareStrobe(50) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
       resp.rtmotper(itrial)=-1;
       [tvbl_fastpress,~,~,missed]=Screen('Flip',win,tvbl_fastpress+[round(1/setup.ifi)-0.5]*setup.ifi);% approximately 1 second
       continue
@@ -1004,13 +1063,28 @@ try
       [~,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+time_vis+stim.dur(stim.durseq(itrial))+stim.isi(stim.isiseq(itrial))+stim.dur(stim.durseq(itrial))+setup.pauseb4q1);
       %       if missed,    flipmiss(itrial)=flipmiss(itrial)+1;      end
       poststimtime=GetSecs;
+      if setup.lj
+        % asked flicker, motion, distinct?
+        lj.prepareStrobe(60) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
       RestrictKeysForKbCheck([quit,loc1Key,loc2Key,loc3Key]);
       [resp.rtmotper(itrial),keycode]=KbWait([],2,poststimtime+setup.maxtime4motper);
       [~,~,keyCode] = KbCheck;
       if find(keycode)
         resp.motperkeycode(itrial)=find(keycode);
+        if setup.lj
+          % responded flicker, motion, distinct?
+          lj.prepareStrobe(100+resp.motperkeycode(itrial)) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
         % Stopping the loop if user presses 'Escape'.
         if keycode(quit)
+          if setup.lj
+            % quit
+            lj.prepareStrobe(254) %prepare a strobed word
+            lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+          end
           break;
         end
         [~,~,keyCode] = KbCheck;
@@ -1035,15 +1109,30 @@ try
       end
       
       poststimtime=GetSecs;
+      if setup.lj
+        % asked direction motion
+        lj.prepareStrobe(61) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
       RestrictKeysForKbCheck([quit,loc4Key,loc5Key]);
       [resp.rtmotdir(itrial),keycode]=KbWait([],2,poststimtime+setup.maxtime4motdir);
       [~,~,keyCode] = KbCheck;
       if find(keycode)
         resp.motdirkeycode(itrial)=find(keycode);
+        if setup.lj
+          % responded flicker, motion, distinct?
+          lj.prepareStrobe(100+resp.motdirkeycode(itrial)) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
       end
       
       % Stopping the loop if user presses 'Escape'.
       if keycode(quit)
+        if setup.lj
+          % quit
+          lj.prepareStrobe(254) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
         break;
       end
       [~,~,keyCode] = KbCheck;
@@ -1057,16 +1146,31 @@ try
       switch stim.block
         case 'av'
           if stim.av.vtrialseq(itrial)>0
-            Screen('DrawText', win, 'visual and auditory same object?', win_center_x-shifttext+macshift, win_center_y);
+            Screen('DrawText', win, 'visual and auditory same direction?', win_center_x-shifttext+macshift, win_center_y);
             [~,~,~,missed]=Screen('Flip',win);
             postfliptime=GetSecs;
+            if setup.lj
+              % asked common source
+              lj.prepareStrobe(62) %prepare a strobed word
+              lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+            end
             RestrictKeysForKbCheck([quit,loc1Key,loc3Key]);
             [resp.rtcomsrc(itrial),keycode]=KbWait([],2,postfliptime+setup.maxtime4comsrc);
             if find(keycode)
               resp.comsrckeycode(itrial)=find(keycode);
+              if setup.lj
+                % responded flicker, motion, distinct?
+                lj.prepareStrobe(100+resp.comsrckeycode(itrial)) %prepare a strobed word
+                lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+              end
             end
             % Stopping the loop if user presses 'Escape'.
             if keycode(quit)
+              if setup.lj
+                % quit
+                lj.prepareStrobe(254) %prepare a strobed word
+                lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+              end
               break;
             end
             [~,~,keyCode] = KbCheck;
@@ -1090,6 +1194,11 @@ try
       RestrictKeysForKbCheck([quit,loc1Key]);
       Screen('DrawText', win, ['On the last ' num2str(stim.feedback(2)) ' trials, you were correct in ' num2str(dircor) '% for Direction of Sounds.'], win_center_x-2*shifttext+macshift, win_center_y);
       [~,~,~,missed]=Screen('Flip',win);
+      if setup.lj
+        % given feedback
+        lj.prepareStrobe(70) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
       WaitSecs(5)
       if itrial~=ntrials
         Screen('DrawText', win, ['Press/hold J to continue.'], win_center_x-1*shifttext+macshift, win_center_y);
@@ -1107,6 +1216,11 @@ try
       RestrictKeysForKbCheck([quit,loc3Key]);
       Screen('DrawText', win, ['Rest! Done with ' num2str(itrial) ' trials out of ' num2str(ntrials) '. Press/hold L to continue.'], win_center_x-2*shifttext+macshift, win_center_y);
       [~,~,~,missed]=Screen('Flip',win);
+      if setup.lj
+        % Rest break
+        lj.prepareStrobe(71) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
       KbPressWait;
     end
     
@@ -1118,6 +1232,11 @@ end
 
 Screen('DrawText', win, ['Done with this block! Thank you!'], win_center_x-1*shifttext+macshift, win_center_y);
 [~,~,~,missed]=Screen('Flip',win);
+if setup.lj
+  % End of block
+  lj.prepareStrobe(72) %prepare a strobed word
+  lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+end
 WaitSecs(3)
 
 % resp.flipmiss=flipmiss;
