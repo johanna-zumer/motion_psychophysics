@@ -6,7 +6,7 @@ clear all;
 
 %% changeable params per experiment
 
-setup.subid='test';
+setup.subid='e01';
 % setup.headwidth=.155; % in m     % JZ=.145        % These 4 params were used by Rohe 2015 with CIPIC
 % setup.headdepth=.195;             % JZ=.18
 % setup.headcircumference=.59;     % JZ=.56
@@ -23,7 +23,7 @@ stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to z
 setup.cueord=[1 2]; % [1 2] or [2 1]
 
 
-stim.isi_flip=[3];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
+stim.isi_flip=[0];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
 stim.dur_flip=[7];  % 3 means 50ms; 6 means 100ms [ 2 3 4]
 stim.asynch=[0]; % seconds; negative means visual first e.g. [-.1 0 .1]
 
@@ -39,7 +39,7 @@ stim.audio.stim='brownnoise'; % 'tone' or 'whitenoise' or 'noisytone'
 stim.backepi=0; % is background EPI noise playing?
 stim.audio.type='MIT'; % 'ITD' or 'ILD' or 'ILDITD' or 'cipic' or 'MIT' or 'rec'
 
-stim.loc=sort([-1.5 1.5]); % degrees; rest of code assumes this is sorted left to right
+stim.loc=sort([-0.5 0.5]); % degrees; rest of code assumes this is sorted left to right
 
 stim.feedback=[0 0];  % [0 0] for no feedback; [X Y] means skip X trials then do feedback based on Y trials
 
@@ -47,7 +47,7 @@ setup.timingtesting=0;
 
 setup.av.askfmdcs=1; % =0 means ask FMD, =1 means ask CS, =2 means Both FMD & CS
 
-setup.includeintro=0;
+setup.includeintro=1;
 
 if setup.timingtesting
   stim.vis.diam=0.8;  % degrees
@@ -301,8 +301,8 @@ stim.audio.areps=setup.atrlpercnd*2*length(stim.isi_flip)*length(stim.dur_flip);
 % end
 
 % Sound sampling frequency
-stim.audio.freq = 192000; % 44100
-stim.audio.freq = 88200; % necessary for 'COLLES-140591'
+% stim.audio.freq = 192000; % 44100
+% stim.audio.freq = 88200; % necessary for 'COLLES-140591'
 stim.audio.freq = 96000; % necessary for 'COLLES-140591'
 % warning('ask why I cannot use higher than 88200 Hz audio freq?')
 
@@ -508,7 +508,7 @@ switch stim.block
 end
 
 %%  Questions / responses
-setup.pauseb4q1=1;
+setup.pauseb4q1=0.8;
 setup.maxtime4motdir=5;
 setup.maxtime4motper=5;
 setup.maxtime4comsrc=5;
