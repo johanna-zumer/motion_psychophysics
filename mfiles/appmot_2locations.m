@@ -738,6 +738,7 @@ if setup.includeintro
 end
 
 if setup.lj
+  % done with examples; now final instructions
   lj.prepareStrobe(6) %prepare a strobed word
   lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
 end
@@ -835,6 +836,7 @@ end
 
 
 if setup.lj
+  % now about to start real trial sequence
   lj.prepareStrobe(5) %prepare a strobed word
   lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
 end
