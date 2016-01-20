@@ -6,7 +6,7 @@ clear all;
 
 %% changeable params per experiment
 
-setup.subid='e01';
+setup.subid='p107';
 % setup.headwidth=.155; % in m     % JZ=.145        % These 4 params were used by Rohe 2015 with CIPIC
 % setup.headdepth=.195;             % JZ=.18
 % setup.headcircumference=.59;     % JZ=.56
@@ -14,14 +14,15 @@ setup.subid='e01';
 
 setup.vlocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
 setup.alocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.lj=1;  % =1 for yes use Labjack, and =0 for no don't use Labjack
 
+setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
+
+setup.cuetrain=0; % =1 on, =0 off;  only works if paradigm is 'cued'
 setup.paradigm='cued'; % 'nocue' or 'cued'
 setup.cuetype='aud'; % aud or vis
 stim.cueprob=[3/10 6/10]; % only for 'cued' condition; percentages (0-1) of congruency likelihood % cue percentages best if such that numerators stay small  (e.g. not 7/10)
 stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to zero if all cued trials are AV
 setup.cueord=[1 2]; % [1 2] or [2 1]
-
 
 stim.isi_flip=[0];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
 stim.dur_flip=[7];  % 3 means 50ms; 6 means 100ms [ 2 3 4]
@@ -39,7 +40,7 @@ stim.audio.stim='brownnoise'; % 'tone' or 'whitenoise' or 'noisytone'
 stim.backepi=0; % is background EPI noise playing?
 stim.audio.type='MIT'; % 'ITD' or 'ILD' or 'ILDITD' or 'cipic' or 'MIT' or 'rec'
 
-stim.loc=sort([-0.5 0.5]); % degrees; rest of code assumes this is sorted left to right
+stim.loc=sort([-7 7]); % degrees; rest of code assumes this is sorted left to right
 
 stim.feedback=[0 0];  % [0 0] for no feedback; [X Y] means skip X trials then do feedback based on Y trials
 
@@ -147,7 +148,7 @@ end
 % end
 
 %% expt settings
-stim.time_to_onset = 0.6; % seconds
+stim.time_to_onset = 1.2; % seconds
 stim.time_to_onset_addedrange=0.2; % seconds
 % setup.type='two'; % or 'three' (locations of stimulus)
 stim.mixblock=0;  % mixblock=1 is mix multiensory and unisensory; mixblock=0 separate blocks for aud,vis,ms
@@ -509,12 +510,14 @@ end
 
 %%  Questions / responses
 setup.pauseb4q1=0.8;
+setup.maxtime4cueprob=5;
 setup.maxtime4motdir=5;
 setup.maxtime4motper=5;
 setup.maxtime4comsrc=5;
 setup.cueduration=0.5;
-setup.postcue=1;
-
+setup.postcue=1.5;
+setup.precueQ=1.0;
+setup.postcueQ=1.0;
 
 % if setup.timingtesting
 %   setup.askmotdir=1;
