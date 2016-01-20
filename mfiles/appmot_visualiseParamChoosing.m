@@ -1058,3 +1058,247 @@ for ii=subuse
   end
   
 end
+
+%%  For 31-38, plotting results for all conditions
+
+clearvars -except *dir
+close all;
+subuse=[31:38 100:102 104:106 1001:1002];
+
+subind=0;
+for ii=subuse
+  subind=subind+1;
+  if ii>1000
+    subpre='e';
+    subnum=ii-1000;
+  else
+    subpre='p';
+    subnum=ii;
+  end
+  if subnum<10
+    sub=[subpre '0' num2str(subnum)];
+  else
+    sub=[subpre num2str(subnum)];
+  end
+  if ii>36 && ii<1000
+    cd('D:\motion_cued\behav_data');
+  elseif ii>1000
+    cd('D:\motion_cued\behav_data');
+  else
+    cd('D:\motion_psychophysics\behav_data');
+  end
+  avfile=dir([sub '_av*']);
+    
+  % without cue
+  cnt=0;
+  for ff=1:length(avfile)
+    load(avfile(ff).name);
+    if strcmp(setup.paradigm,'cued')  % do blocks with cue separately
+      continue
+    end
+    cnt=cnt+1;
+    appmot_assessment;
+    comsrc_tmp(cnt,:)=comsrcisidur; % congruent, incongruent, audalone (% common source correct)
+    comsrcn_tmp(cnt,:)=comsrcisidur_numer; % congruent, incongruent, audalone (% common source correct)
+    comsrcd_tmp(cnt,:)=comsrcisidur_denom; % congruent, incongruent, audalone (% common source correct)
+    comsrcMD_tmp(cnt,:)=comsrcMDisidur; % cong-MDcor, cong-MDincor, incong-MDcor, incong-MDincor (% common source correct)
+    comsrcMDn_tmp(cnt,:)=comsrcMDisidur_numer; % cong-MDcor, cong-MDincor, incong-MDcor, incong-MDincor (% common source correct)
+    comsrcMDd_tmp(cnt,:)=comsrcMDisidur_denom; % cong-MDcor, cong-MDincor, incong-MDcor, incong-MDincor (% common source correct)
+    
+    percorcomsrccong_tmp(cnt,:)=percorcomsrccong; % Correct-Cong, Correct-Incong, Incorrect-Cong, Incorrect-Incong (% correct of motion direction)
+    percorcomsrccongn_tmp(cnt,:)=percorcomsrccong_numer; % Correct-Cong, Correct-Incong, Incorrect-Cong, Incorrect-Incong (% correct of motion direction)
+    percorcomsrccongd_tmp(cnt,:)=percorcomsrccong_denom; % Correct-Cong, Correct-Incong, Incorrect-Cong, Incorrect-Incong (% correct of motion direction)
+  end
+  
+  percorcomsrccong_all(subind,:)=nansum(percorcomsrccongn_tmp)./nansum(percorcomsrccongd_tmp);
+  percorcomsrccongN_all(subind,:)=nansum(percorcomsrccongd_tmp);
+  comsrc_all(subind,:)=nansum(comsrcn_tmp)./nansum(comsrcd_tmp);
+  comsrcN_all(subind,:)=nansum(comsrcd_tmp);
+  comsrcMD_all(subind,:)=nansum(comsrcMDn_tmp)./nansum(comsrcMDd_tmp);
+  comsrcMDN_all(subind,:)=nansum(comsrcMDd_tmp);
+  
+%   comsrc_all(subind,:)=nanmean(comsrc_tmp,1);
+%   comsrcn_all(subind,:)=nanmean(comsrcn_tmp,1);
+%   comsrcd_all(subind,:)=nanmean(comsrcd_tmp,1);
+%   comsrcMD_all(subind,:)=nanmean(comsrcMD_tmp,1);
+  
+  
+  % with cue
+  cnt=0;
+  for ff=1:length(avfile)
+    load(avfile(ff).name);
+    if strcmp(setup.paradigm,'nocue')  % do blocks without cue separately
+      continue
+    end
+    cnt=cnt+1;
+    appmot_assessment;
+    percorcomsrccong_percue_tmp(cnt,:,:)=percorcomsrccong_percue;
+    percorcomsrccong_percue_numer_tmp(cnt,:,:)=percorcomsrccong_percue_numer;
+    percorcomsrccong_percue_denom_tmp(cnt,:,:)=percorcomsrccong_percue_denom;
+    comsrcMD_percue_tmp(cnt,:,:)=comsrcMDisidur_percue;
+    comsrcMD_percue_numer_tmp(cnt,:,:)=comsrcMDisidur_percue_numer;
+    comsrcMD_percue_denom_tmp(cnt,:,:)=comsrcMDisidur_percue_denom;
+  end
+  if cnt>0
+    percorcomsrccong_percue_all(subind,:,:)=squeeze(nansum(percorcomsrccong_percue_numer_tmp,1)./nansum(percorcomsrccong_percue_denom_tmp,1));
+    percorcomsrccong_percueN_all(subind,:,:)=squeeze(nansum(percorcomsrccong_percue_denom_tmp,1));
+    comsrcMD_percue_all(subind,:,:)=squeeze(nansum(comsrcMD_percue_numer_tmp,1)./nansum(comsrcMD_percue_denom_tmp,1));
+    comsrcMD_percueN_all(subind,:,:)=squeeze(nansum(comsrcMD_percue_denom_tmp,1));
+    
+    %  moddir-correct, collapsed over ComSrc answer
+    corMD_percue_all(subind,:,1)=nansum(nansum(percorcomsrccong_percue_numer_tmp(:,:,[1 3]),3),1)./nansum(nansum(percorcomsrccong_percue_denom_tmp(:,:,[1 3]),3),1);
+    corMD_percueN_all(subind,:,1)=nansum(nansum(percorcomsrccong_percue_denom_tmp(:,:,[1 3]),3),1);
+    corMD_percue_all(subind,:,2)=nansum(nansum(percorcomsrccong_percue_numer_tmp(:,:,[2 4]),3),1)./nansum(nansum(percorcomsrccong_percue_denom_tmp(:,:,[2 4]),3),1);
+    corMD_percueN_all(subind,:,2)=nansum(nansum(percorcomsrccong_percue_denom_tmp(:,:,[2 4]),3),1);
+    
+    corCS_percue_all(subind,:,1)=nansum(nansum(comsrcMD_percue_numer_tmp(:,:,[1 2]),3),1)./nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[1 2]),3),1);
+    corCS_percueN_all(subind,:,1)=nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[1 2]),3),1);
+    corCS_percue_all(subind,:,2)=nansum(nansum(comsrcMD_percue_numer_tmp(:,:,[3 4]),3),1)./nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[3 4]),3),1);
+    corCS_percueN_all(subind,:,2)=nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[3 4]),3),1);
+    
+  else
+    percorcomsrccong_percue_all(subind,:,:)=nan(2,4);
+    percorcomsrccong_percueN_all(subind,:,:)=nan(2,4);
+    comsrcMD_percue_all(subind,:,:)=nan(2,4);
+    comsrcMD_percueN_all(subind,:,:)=nan(2,4);
+
+    corMD_percue_all(subind,:,:)=nan(2,2);
+    corMD_percueN_all(subind,:,:)=nan(2,2);
+    corCS_percue_all(subind,:,:)=nan(2,2);
+    corCS_percueN_all(subind,:,:)=nan(2,2);
+  end
+  
+
+end
+
+% order of columns in percorcomsrccong_all is less intuitive.  reorder.
+tmp=percorcomsrccong_all(:,[1 3 2 4]);
+percorcomsrccong_all=tmp;
+tmp=percorcomsrccongN_all(:,[1 3 2 4]);
+percorcomsrccongN_all=tmp;
+tmp=percorcomsrccong_percue_all(:,:,[1 3 2 4]);
+percorcomsrccong_percue_all=tmp;
+tmp=percorcomsrccong_percueN_all(:,:,[1 3 2 4]);
+percorcomsrccong_percueN_all=tmp;
+
+% create normalised percentage of trial numbers per participant
+percorcomsrccongN_all_norm=percorcomsrccongN_all./repmat(sum(percorcomsrccongN_all,2),[1 4]);
+percorcomsrccong_percueN_all_norm=percorcomsrccong_percueN_all./repmat(sum(sum(percorcomsrccong_percueN_all,2),3),[1 2 4]);
+corMD_percueN_all_norm=corMD_percueN_all./repmat(sum(sum(corMD_percueN_all,2),3),[1 2 2]);
+comsrcMDN_all_norm=comsrcMDN_all./repmat(sum(comsrcMDN_all,2),[1 4]);
+comsrcMD_percueN_all_norm=comsrcMD_percueN_all./repmat(sum(sum(comsrcMD_percueN_all,2),3),[1 2 4]);
+corCS_percueN_all_norm=corCS_percueN_all./repmat(sum(sum(corCS_percueN_all,2),3),[1 2 2]);
+
+
+corMD_all=[nansum(percorcomsrccong_all(:,1:2).*percorcomsrccongN_all(:,1:2),2) nansum(percorcomsrccong_all(:,3:4).*percorcomsrccongN_all(:,3:4),2)]./[nansum(percorcomsrccongN_all(:,1:2),2) nansum(percorcomsrccongN_all(:,3:4),2)];
+corMDN_all=[nansum(percorcomsrccongN_all(:,1:2),2) nansum(percorcomsrccongN_all(:,3:4),2)]./repmat(nansum([nansum(percorcomsrccongN_all(:,1:2),2) nansum(percorcomsrccongN_all(:,3:4),2)],2),[1 2]);
+
+corCS_all=[nansum(comsrcMD_all(:,1:2).*comsrcMDN_all_norm(:,1:2),2) nansum(comsrcMD_all(:,3:4).*comsrcMDN_all_norm(:,3:4),2)]./[nansum(comsrcMDN_all_norm(:,1:2),2) nansum(comsrcMDN_all_norm(:,3:4),2)];
+corCSN_all=[nansum(comsrcMDN_all_norm(:,1:2),2) nansum(comsrcMDN_all_norm(:,3:4),2)]./repmat(nansum([nansum(comsrcMDN_all_norm(:,1:2),2) nansum(comsrcMDN_all_norm(:,3:4),2)],2),[1 2]);
+
+close all
+figind=1;
+figure(figind);figind=figind+1;
+subplot(2,1,1);bar(corMD_all');ylabel('% correct of motion direction');xlabel('Cong, Incong');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(corMDN_all');ylabel('% of trials');axis([-inf inf 0 0.55]);
+
+figure(figind);figind=figind+1;
+subplot(2,1,1);bar(corCS_all');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);
+% subplot(2,1,1);bar([corCS_all(:,1) 1-corCS_all(:,2)]');ylabel('% Common Source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(corCSN_all');ylabel('% of trials');axis([-inf inf 0 0.55]);
+figure(figind);figind=figind+1;
+% subplot(2,1,1);bar(corCS_all');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);
+subplot(2,1,1);bar([corCS_all(:,1) 1-corCS_all(:,2)]');ylabel('% Common Source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(corCSN_all');ylabel('% of trials');axis([-inf inf 0 0.55]);
+
+figure(figind);figind=figind+1;
+% subplot(2,1,1);bar(percorcomsrccong_all');ylabel('% correct of motion direction');xlabel('Cong-CScor, Cong-CSincor, Incong-CScor, Incong-CSincor');axis([-inf inf 0 1]);
+subplot(2,1,1);bar(percorcomsrccong_all');ylabel('% correct of motion direction');xlabel('Cong-CSyes, Cong-CSno, Incong-CSno, Incong-CSyes');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(percorcomsrccongN_all_norm');ylabel('% of trials');axis([-inf inf 0 0.5]);
+
+figure(figind);figind=figind+1;
+subplot(2,1,1);bar(comsrcMD_all');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);
+% subplot(2,1,1);bar([comsrcMD_all(:,1:2) 1-comsrcMD_all(:,3:4)]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(comsrcMDN_all_norm');ylabel('% of trials');axis([-inf inf 0 0.5]);
+figure(figind);figind=figind+1;
+% subplot(2,1,1);bar(comsrcMD_all');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);
+subplot(2,1,1);bar([comsrcMD_all(:,1:2) 1-comsrcMD_all(:,3:4)]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);
+subplot(2,1,2);bar(comsrcMDN_all_norm');ylabel('% of trials');axis([-inf inf 0 0.5]);
+
+
+maxy=ceil(100*max(max(corMD_percueN_all_norm(:)),max(corCS_percueN_all_norm(:)))/5)*5/100;
+
+figure(figind);figind=figind+1;
+subplot(2,2,1);bar(squeeze(corMD_percue_all(:,1,:))');ylabel('% correct of motion direction');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar(squeeze(corMD_percue_all(:,2,:))');ylabel('% correct of motion direction');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(corMD_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(corMD_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+
+figure(figind);figind=figind+1;
+subplot(2,2,1);bar(squeeze(corCS_percue_all(:,1,:))');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar(squeeze(corCS_percue_all(:,2,:))');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('High cong. prob. cue')
+% subplot(2,2,1);bar([squeeze(corCS_percue_all(:,1,1)) 1-squeeze(corCS_percue_all(:,1,2))]');ylabel('% common source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+% subplot(2,2,2);bar([squeeze(corCS_percue_all(:,2,1)) 1-squeeze(corCS_percue_all(:,2,2))]');ylabel('% common source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(corCS_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(corCS_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+figure(figind);figind=figind+1;
+% subplot(2,2,1);bar(squeeze(corCS_percue_all(:,1,:))');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+% subplot(2,2,2);bar(squeeze(corCS_percue_all(:,2,:))');ylabel('% common source correct');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,1);bar([squeeze(corCS_percue_all(:,1,1)) 1-squeeze(corCS_percue_all(:,1,2))]');ylabel('% common source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar([squeeze(corCS_percue_all(:,2,1)) 1-squeeze(corCS_percue_all(:,2,2))]');ylabel('% common source Yes');xlabel('Cong, Incong');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(corCS_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(corCS_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+
+maxy=ceil(100*max(max(percorcomsrccong_percueN_all_norm(:)),max(comsrcMD_percueN_all_norm(:)))/5)*5/100;
+
+figure(figind);figind=figind+1;
+% subplot(2,2,1);bar(squeeze(percorcomsrccong_percue_all(:,1,:))');ylabel('% correct of motion direction');xlabel('Cong-CScor, Cong-CSincor, Incong-CScor, Incong-CSincor');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+% subplot(2,2,2);bar(squeeze(percorcomsrccong_percue_all(:,2,:))');ylabel('% correct of motion direction');xlabel('Cong-CScor, Cong-CSincor, Incong-CScor, Incong-CSincor');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,1);bar(squeeze(percorcomsrccong_percue_all(:,1,:))');ylabel('% correct of motion direction');xlabel('Cong-CSyes, Cong-CSno, Incong-CSno, Incong-CSyes');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar(squeeze(percorcomsrccong_percue_all(:,2,:))');ylabel('% correct of motion direction');xlabel('Cong-CSyes, Cong-CSno, Incong-CSno, Incong-CSyes');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(percorcomsrccong_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(percorcomsrccong_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+
+figure(figind);figind=figind+1;
+subplot(2,2,1);bar(squeeze(comsrcMD_percue_all(:,1,:))');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar(squeeze(comsrcMD_percue_all(:,2,:))');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('High cong. prob. cue')
+% subplot(2,2,1);bar([squeeze(comsrcMD_percue_all(:,1,1:2)) 1-squeeze(comsrcMD_percue_all(:,1,3:4))]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+% subplot(2,2,2);bar([squeeze(comsrcMD_percue_all(:,2,1:2)) 1-squeeze(comsrcMD_percue_all(:,2,3:4))]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(comsrcMD_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(comsrcMD_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+figure(figind);figind=figind+1;
+% subplot(2,2,1);bar(squeeze(comsrcMD_percue_all(:,1,:))');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+% subplot(2,2,2);bar(squeeze(comsrcMD_percue_all(:,2,:))');ylabel('% common source correct');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,1);bar([squeeze(comsrcMD_percue_all(:,1,1:2)) 1-squeeze(comsrcMD_percue_all(:,1,3:4))]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('Low cong. prob. cue')
+subplot(2,2,2);bar([squeeze(comsrcMD_percue_all(:,2,1:2)) 1-squeeze(comsrcMD_percue_all(:,2,3:4))]');ylabel('% common source Yes');xlabel('Cong-MDcor, Cong-MDincor, Incong-MDcor, Incong-MDincor');axis([-inf inf 0 1]);title('High cong. prob. cue')
+subplot(2,2,3);bar(squeeze(comsrcMD_percueN_all_norm(:,1,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+subplot(2,2,4);bar(squeeze(comsrcMD_percueN_all_norm(:,2,:))');ylabel('% of trials');axis([-inf inf 0 maxy]);
+
+% percorcomsrccong_avg=nansum(percorcomsrccong_all.*percorcomsrccongN_all,1)./nansum(percorcomsrccongN_all,1);
+
+% % % Stats
+%                 column1 - dependent variable
+%                 column2 - grouping variable for subject
+%                 column3 - grouping variable for factor 1
+%                 column4 - grouping variable for factor 2
+nsub=size(corMD_percue_all(7:end,:,:),1);
+data(:,1)=reshape(corMD_percue_all(7:end,:,:),[nsub*2*2 1])
+data(:,2)=[1:nsub 1:nsub 1:nsub 1:nsub];
+data(:,3)=[ones(nsub*2,1); 2*ones(nsub*2,1)]; % congruency
+data(:,4)=[ones(nsub,1); 2*ones(nsub,1); ones(nsub,1); 2*ones(nsub,1)]; % cue
+stats = rmanova2(data,.05,0,1);
+
+% Three-way RM anova (congruency, cue, comsrc-cor)
+% Following: http://uk.mathworks.com/matlabcentral/answers/140799-3-way-repeated-measures-anova-pairwise-comparisons-using-multcompare
+percormotdir=reshape(percorcomsrccong_percue_all(end-nsub+1:end,:,:),[nsub 8]);
+varNames = {'LC_Con_CSyes','HC_Con_CSyes','LC_Con_CSno','HC_Con_CSno','LC_Inc_CSno','HC_Inc_CSno','LC_Inc_CSyes','HC_Inc_CSyes'};
+t = array2table(percormotdir,'VariableNames',varNames);
+
+factorNames = {'Cue','Congruency','ComSrcResp'};
+within = table({'L';'H';'L';'H';'L';'H';'L';'H'},{'C';'C';'C';'C';'I';'I';'I';'I'},{'Y';'Y';'N';'N';'Y';'Y';'N';'N'},'VariableNames',factorNames);
+
+rm = fitrm(t,'LC_Con_CSyes-HC_Inc_CSyes~1','WithinDesign',within);
+
+[ranovatbl] = ranova(rm, 'WithinModel','Cue*Congruency*ComSrcResp')
+
+
