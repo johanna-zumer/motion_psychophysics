@@ -566,7 +566,11 @@ switch stim.block
   case 'av'
     switch setup.paradigm
       case 'cued'
-        [resp.rtmotper,resp.rtmotdir,resp.rtcomsrc,resp.motperkeycode,resp.motdirkeycode,resp.comsrckeycode]=deal(nan(1,stim.mtot));
+        if setup.cuetrain
+          [resp.rtmotper,resp.rtmotdir,resp.rtcomsrc,resp.rtcueprob,resp.motperkeycode,resp.motdirkeycode,resp.comsrckeycode,resp.cueprobkeycode]=deal(nan(1,stim.mtot));
+        else
+          [resp.rtmotper,resp.rtmotdir,resp.rtcomsrc,resp.motperkeycode,resp.motdirkeycode,resp.comsrckeycode]=deal(nan(1,stim.mtot));
+        end
       case 'nocue'
         [resp.rtmotper,resp.rtmotdir,resp.rtcomsrc,resp.motperkeycode,resp.motdirkeycode,resp.comsrckeycode]=deal(nan(1,stim.mreps));
     end
@@ -591,6 +595,11 @@ loc3Key = KbName('l');    % corresponding to 'distinct' or 'different'
 loc4Key = KbName('s');    % corresponding to motion to the left
 loc5Key = KbName('f');    % corresponding to motion to the right
 loc6Key = KbName('d');    % corresponding to centretest
+
+resp.motperkey=[loc1Key loc2Key loc3Key];
+resp.comsrckey=[loc1Key loc3Key];
+resp.motdirkey=[loc4Key loc5Key];
+resp.cuetrainkey=[loc6Key loc2Key];
 
 if setup.lj
   % trigger start of expt
@@ -747,8 +756,6 @@ end
 % Reminding of key responses
 flipcnt=0;
 fliptimecnt=0;
-resp.motperkey=[loc1Key loc2Key loc3Key];
-resp.comsrckey=[loc1Key loc3Key];
 RestrictKeysForKbCheck([quit,loc1Key,loc2Key,loc3Key,loc4Key,loc5Key,loc6Key]);
 switch stim.block
   case 'av'
@@ -763,11 +770,12 @@ switch stim.block
           KbPressWait;
         end
         for cc=1:length(stim.cueprob)
+          cueprobshow=stim.cueprob(cc)/sum(stim.cueprob);
           switch setup.cuetype
             case 'vis'
-              Screen('DrawText', win,['This cue ' setup.cuesym{cc} ' means ' num2str(round(100*stim.cueprob(cc))) ' probability AV congruent' ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+              Screen('DrawText', win,['This cue ' setup.cuesym{cc} ' means ' num2str(round(100*cueprobshow)) ' probability AudVis same' ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
             case 'aud'
-              Screen('DrawText', win,['This sound means ' num2str(round(100*stim.cueprob(cc))) ' probability AV congruent' ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+              Screen('DrawText', win,['This sound means ' num2str(round(100*cueprobshow)) ' probability AudVis same' ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
               PsychPortAudio('FillBuffer',pamaster,cuetones(:,:,cc)');
               PsychPortAudio('Start',pamaster);
           end
@@ -841,7 +849,7 @@ if setup.lj
   lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
 end
 
-% loop through trials
+%% loop through trials
 try
   resp.stimstart=nan(1,ntrials);
   for itrial=1:ntrials
@@ -929,7 +937,11 @@ try
             resp.time_startcue(itrial)=resp.stimstart(itrial)-0.5*setup.ifi;
             %           WaitSecs(setup.cueduration);
             %           resp.time_endcue(itrial)=GetSecs;
-            [tvbl,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+setup.postcue-6*setup.ifi);
+            if setup.cuetrain
+              [tvbl,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)-3*setup.ifi); % Thus, 50ms after previous flip
+            else
+              [tvbl,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+setup.postcue-6*setup.ifi); % Thus, setup.postcue after previous flip
+            end
           case 'vis'
             error('this option not calibrated for timing')
             Screen('DrawText', win, setup.cuesym{stim.av.cueseq(itrial)}, win_center_x, win_center_y);
@@ -941,18 +953,62 @@ try
             WaitSecs(setup.postcue);
         end
       otherwise
+        % question: why is setup.postcue here when no cue is presented? what if delete?
         [tvbl,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+setup.postcue-6*setup.ifi);
     end
     switch stim.block
       case {'av' 'audonly'}
         PsychPortAudio('FillBuffer',pamaster,audstim);
     end
+    
     switch setup.paradigm
       case 'cued'
-        resp.stimstart(itrial)=tvbl+6*setup.ifi;  % an additional 3*setup.ifi will be added on to all time.
+        resp.stimstart(itrial)=tvbl+6*setup.ifi;  % an additional 6*setup.ifi will be added on to all time.
       case 'nocue'
-        resp.stimstart(itrial)=tvbl+6*setup.ifi;  % an additional 3*setup.ifi will be added on to all time.
+        resp.stimstart(itrial)=tvbl+6*setup.ifi;  % an additional 6*setup.ifi will be added on to all time.
     end
+    
+    % training block for cue value
+    if setup.cuetrain && strcmp(setup.paradigm,'cued')
+      
+      cuequestion='Likely for Flash and Sound to move together? D for yes, K for no';
+      Screen('DrawText', win, cuequestion, win_center_x-2*shifttext+macshift, win_center_y);
+      [tvbl,~,~,missed]=Screen('Flip',win,resp.stimstart(itrial)+setup.precueQ-6*setup.ifi); % setup.precueQ after tvbl above
+      poststimtime=GetSecs;
+      if setup.lj
+        % asked for cue likelihood?
+        lj.prepareStrobe(63) %prepare a strobed word
+        lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+      end
+      RestrictKeysForKbCheck([quit,loc2Key,loc6Key]); % K(2) or D(6)
+      [resp.rtcueprob(itrial),keycode]=KbWait([],2,poststimtime+setup.maxtime4cueprob);
+      [~,~,keyCode] = KbCheck;
+      if find(keycode)
+        resp.cueprobkeycode(itrial)=find(keycode);
+        if setup.lj
+          % responded flicker, motion, distinct?
+          lj.prepareStrobe(100-10+resp.cueprobkeycode(itrial)) %prepare a strobed word
+          lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+        end
+        % Stopping the loop if user presses 'Escape'.
+        if keycode(quit)
+          if setup.lj
+            % quit
+            lj.prepareStrobe(254) %prepare a strobed word
+            lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
+          end
+          break;
+        end
+        [~,~,keyCode] = KbCheck;
+        %         postmotpertime=GetSecs;
+      else
+        resp.cueprobkeycode(itrial)=0;
+      end
+
+      [tvbl,~,~,missed]=Screen('Flip',win);
+      resp.stimstart(itrial)=tvbl+setup.postcueQ+6*setup.ifi;  % using new tvbl
+    end
+    
     %     resp.stimstart(itrial)-resp.starttime
     % 'resp.stimstart' is beginning of first stim, even if this means a 'negative' time regarding the asynchrony
     
@@ -1091,6 +1147,8 @@ try
         end
         [~,~,keyCode] = KbCheck;
         %         postmotpertime=GetSecs;
+      else
+        resp.motperkeycode(itrial)=0;
       end
     end
     
@@ -1126,6 +1184,8 @@ try
           lj.prepareStrobe(100+resp.motdirkeycode(itrial)) %prepare a strobed word
           lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
         end
+      else
+        resp.motdirkeycode(itrial)=0;
       end
       
       % Stopping the loop if user presses 'Escape'.
@@ -1162,9 +1222,11 @@ try
               resp.comsrckeycode(itrial)=find(keycode);
               if setup.lj
                 % responded flicker, motion, distinct?
-                lj.prepareStrobe(100+resp.comsrckeycode(itrial)) %prepare a strobed word
+                lj.prepareStrobe(100+10+resp.comsrckeycode(itrial)) %prepare a strobed word
                 lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
               end
+            else
+              resp.comsrckeycode(itrial)=0;
             end
             % Stopping the loop if user presses 'Escape'.
             if keycode(quit)
