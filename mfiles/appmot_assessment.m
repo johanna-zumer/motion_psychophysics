@@ -1,24 +1,17 @@
 % script to assess 'resp' from call_appmot_2locations
 
 trialuse=ones(1,length(resp.stimstart));
-% if str2double(setup.subid(2:end))<107
-try
-  if length(resp.tvbl_vis1on)<length(resp.stimstart)
-%     trialuse=1:[length(resp.time_startcue)-1];
-    trialuse(1,length(resp.tvbl_vis1on):end)=0;
-%   else
-%     trialuse=1:length(resp.stimstart);
-  end
-catch 
-  if length(resp.timeaudOnset)<length(resp.stimstart)
-%     trialuse=1:[length(resp.time_startcue)-1];
-    trialuse(1,length(resp.timeaudOnset):end)=0;
-%   else
-%     trialuse=1:length(resp.stimstart);
-  end
+switch setup.paradigm
+  case 'cued'
+    if length(resp.time_startcue)<length(resp.stimstart)
+      trialuse(1,length(resp.time_startcue):end)=0;
+    end
+  case 'nocue'
+    if length(resp.timeaudOnset)<length(resp.stimstart)
+      trialuse(1,length(resp.timeaudOnset):end)=0;
+    end
 end
-% else
-% end
+
 
 switch stim.block
   case 'av'
@@ -74,18 +67,23 @@ switch stim.block
     
     if setup.av.askfmdcs==1 || setup.av.askfmdcs==2
       disp('display percent common source percept as function of congruency')
-      disp('congruent, incongruent, audalone (% common source correct)')
-      comsrc=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq))  /length(find(trialuse & stim.av.congseq & stim.av.vtrialseq))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq))  /length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & ~stim.av.vtrialseq))  /length(find(trialuse& ~stim.av.congseq & ~stim.av.vtrialseq)) ];
+%       disp('congruent, incongruent, audalone (% common source correct)')
+      disp('congruent, incongruent (% common source correct)')
+%       comsrc=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq))  /length(find(trialuse & stim.av.congseq & stim.av.vtrialseq))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq))  /length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq))   length(find(isnan(resp.comsrckeycode) & isnan(resp.corcong) & ~stim.av.congseq  & ~stim.av.vtrialseq))  /length(find(trialuse& ~stim.av.congseq & ~stim.av.vtrialseq)) ];
+      comsrc=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq))  /length(find(trialuse & stim.av.congseq & stim.av.vtrialseq))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq))  /length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq))    ];
       comsrc
 
       for aa=1:length(unique(stim.isiseq))
         for bb=1:length(unique(stim.durseq))
+%           comsrcisidur(aa,:,bb)=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))  /length(find(trialuse & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))  /length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
+%           comsrcisidur_numer(aa,:,bb)=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
+%           comsrcisidur_denom(aa,:,bb)=[length(find(trialuse & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))         length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
           comsrcisidur(aa,:,bb)=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))  /length(find(trialuse & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))  /length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
           comsrcisidur_numer(aa,:,bb)=[length(find(resp.comsrckeycode==resp.corcong & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   length(find(resp.comsrckeycode==resp.corcong & ~stim.av.congseq  & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
           comsrcisidur_denom(aa,:,bb)=[length(find(trialuse & stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))         length(find(trialuse& ~stim.av.congseq & stim.av.vtrialseq & stim.isiseq==aa & stim.durseq==bb))   ];
         end
       end
-      disp('congruent, incongruent, audalone (% common source correct)(columns), per each ISI (rows) and Duration (3rd dimension)')
+      disp('congruent, incongruent (% common source correct)(columns), per each ISI (rows) and Duration (3rd dimension)')
       comsrcisidur
       
 
@@ -112,7 +110,7 @@ switch stim.block
           end
         end
       end
-      disp('ComSrc, Not ComSrc, AudAlone (percent correct of motion direction) (columns), per each ISI (rows) and Duration (3rd dimension)')
+      disp('ComSrc, Not ComSrc (percent correct of motion direction) (columns), per each ISI (rows) and Duration (3rd dimension)')
       [percorcomsrc -1 percorcomsrc_num]
       %     end
       
@@ -128,7 +126,7 @@ switch stim.block
           end
         end
       end
-      disp('ComSrc-Cong, NotComSrc-Incong, AudAlone (percent correct of motion direction) (columns), per each ISI (rows) and Duration (3rd dimension)')
+      disp('ComSrc-Cong, NotComSrc-Incong (percent correct of motion direction) (columns), per each ISI (rows) and Duration (3rd dimension)')
       [percorcorcomsrc -1 percorcorcomsrc_num]
       %     end
       
