@@ -788,6 +788,7 @@ switch stim.block
           KbPressWait;
           resp.corcong(stim.av.congseq==1)=loc1Key; % audvis congruent
           resp.corcong(stim.av.congseq==0)=loc3Key; % audvis incongruent
+          resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq)=nan; % aud alone (so no response required)
         end
       case 'nocue'
         ntrials=stim.mreps;
@@ -808,6 +809,7 @@ switch stim.block
           KbPressWait;
           resp.corcong(stim.av.congseq==1)=loc1Key; % audvis congruent
           resp.corcong(stim.av.congseq==0)=loc3Key; % audvis incongruent
+          resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq)=nan; % aud alone (so no response required)
         end
     end
   case 'audonly'

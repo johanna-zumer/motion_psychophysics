@@ -6,23 +6,26 @@ clear all;
 
 %% changeable params per experiment
 
-setup.subid='p107';
+setup.subid='test';
 % setup.headwidth=.155; % in m     % JZ=.145        % These 4 params were used by Rohe 2015 with CIPIC
 % setup.headdepth=.195;             % JZ=.18
 % setup.headcircumference=.59;     % JZ=.56
 % setup.headheight=.225;           % JZ=.215
 
-setup.vlocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.alocation='313a'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.vlocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.alocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
 
 setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
 
+setup.paradigm='nocue'; % 'nocue' or 'cued'
+stim.nocueaudonly=1/10; % percentage of no-cue trials which are aud-only; set to zero if all trials are AV
+
 setup.cuetrain=0; % =1 on, =0 off;  only works if paradigm is 'cued'
-setup.paradigm='cued'; % 'nocue' or 'cued'
 setup.cuetype='aud'; % aud or vis
 stim.cueprob=[3/10 6/10]; % only for 'cued' condition; percentages (0-1) of congruency likelihood % cue percentages best if such that numerators stay small  (e.g. not 7/10)
-stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to zero if all cued trials are AV
+stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to zero if all trials are AV
 setup.cueord=[1 2]; % [1 2] or [2 1]
+
 
 stim.isi_flip=[0];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
 stim.dur_flip=[7];  % 3 means 50ms; 6 means 100ms [ 2 3 4]
@@ -32,7 +35,7 @@ stim.block='av'; % blocktype: 'av' or 'visonly' or 'audonly';
 % stim.block='audonly'; % blocktype: 'av' or 'visonly' or 'audonly';
 % stim.block='visonly'; % blocktype: 'av' or 'visonly' or 'audonly';
 
-setup.mtrlpercnd=3; % multisensory trials per condition
+setup.mtrlpercnd=1; % multisensory trials per condition
 setup.atrlpercnd=3; % auditory only trials per condition
 setup.vtrlpercnd=0; % visual only trials per condition
 
@@ -127,12 +130,17 @@ addpath(genpath(setup.rdir));
 if setup.timingtesting
   stim.cueprob=[2/10 8/10]; % only for 'cued' condition; percentages (0-1) of congruency likelihood % cue percentages best if such that numerators stay small  (e.g. not 7/10)
   stim.cuedaudonly=0;  % percentage of cued trials which are aud-only; set to zero if all cued trials are AV
+  stim.nocueaudonly=0;  % percentage of nocue trials which are aud-only; set to zero if all nocue trials are AV
 end
 
 switch stim.block
   case 'av'
-    if any(setup.mtrlpercnd*2./stim.cueprob~=round(setup.mtrlpercnd*2./stim.cueprob))
-      error('adjust stim.cueprob and/or setup.mtrlpercnd')
+    switch setup.paradigm
+      case 'cued'
+        if any(setup.mtrlpercnd*2./stim.cueprob~=round(setup.mtrlpercnd*2./stim.cueprob))
+          error('adjust stim.cueprob and/or setup.mtrlpercnd')
+        end
+      otherwise
     end
 end
 
@@ -273,8 +281,21 @@ switch setup.paradigm
       %       stim.onsetjitter=stim.time_to_onset_addedrange*rand(1,stim.mtot);
     end
   case 'nocue'
-    stim.motcnd=size(stim.loc,2)^2; % 4 multsens motion conditions for 2 locations
-    stim.mreps=setup.mtrlpercnd*stim.motcnd*length(stim.asynch);
+    if stim.nocueaudonly>0
+      if stim.nocueaudonly>0.5
+        error('are you sure you wish such a high aud-alone rate?')
+      end
+      audratios=round(1000*[(1-stim.nocueaudonly)/2  (1-stim.nocueaudonly)/2   stim.nocueaudonly]/stim.nocueaudonly)/1000;
+      if any(2*audratios(:)~=round(2*audratios(:)))
+        error('adjust stim.cueprob and stim.cuedaudonly')
+      end
+%       stim.mreps=setup.mtrlpercnd*2*length(stim.asynch)*[audratios(1)/2 audratios(1)/2 audratios(2)]; % cong, incong, audalone
+      stim.mreps=setup.mtrlpercnd*2*length(stim.asynch)*audratios; % cong, incong, audalone
+      stim.mreps=round(stim.mreps);
+    else
+      stim.motcnd=size(stim.loc,2)^2; % 4 multsens motion conditions for 2 locations
+      stim.mreps=setup.mtrlpercnd*stim.motcnd*length(stim.asynch);
+    end
     %     stim.onsetjitter=stim.time_to_onset_addedrange*rand(1,stim.mreps);
 end
 
@@ -439,18 +460,55 @@ switch stim.block
         stim.durseq=savc(7,morder);
         stim.onsetjitter=stim.time_to_onset_addedrange*rand(1,stim.mtot);
       case 'nocue'
-        asynch=[];
-        for ss=1:length(stim.asynch)
-          asynch=[asynch ss*ones(1,stim.motcnd)];
-        end
-        if length(stim.loc)==2
-          astim=repmat([1 2 1 2],1,length(stim.asynch));
-          vstim=repmat([1 2 2 1],1,length(stim.asynch));
-        else
-          error('write stim sequence for other than 2 stim locations')
-        end
-        congseq=vstim==astim;
-        savc=repmat([asynch; astim; vstim; congseq],[1 setup.mtrlpercnd]);
+          savc=[];
+          cc=1;  % no cue
+          if size(audratios,2)~=size(stim.mreps,2)
+            error('something went wrong with audratios and stim.mreps')
+          end
+          for cong=1:size(stim.mreps,2) % cong =1 means congruent; cong=2 means incongruent; cong=3 means aud-alone
+            if stim.nocueaudonly>0
+              motcndtmp=stim.mreps(1,cong)/audratios(cc,cong)/2/length(stim.asynch); % should equal setup.mtrlpercnd ?
+%               cue=cc*ones(1,stim.mreps(cc,cong)); % length setup.mtrlpercnd*2 ?
+            else
+              motcndtmp=stim.mreps(cc,cong)/2/length(stim.asynch);
+%               cue=cc*ones(1,stim.mreps(cc,cong)*cueratios(cc,cong));
+            end
+            asynch=[];
+            for ss=1:length(stim.asynch)
+              asynch=[asynch ss*ones(1,2*motcndtmp*audratios(cc,cong))]; % index for possible temporal asynchronies
+            end
+            asynch=[asynch asynch];
+            if cong==1 % congruent
+              vstim=repmat([1 2],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+              astim=repmat([1 2],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+            elseif cong==2 % incongruent
+              vstim=repmat([2 1],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+              astim=repmat([1 2],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+            elseif cong==3 % aud-alone
+              vstim=repmat([0 0],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+              astim=repmat([1 2],1,motcndtmp*length(stim.asynch)*2*audratios(cc,cong));
+            end
+            congseq=vstim==astim;
+            savc=[savc, [asynch; astim; vstim; congseq]];
+%             savc=[savc, [asynch; astim; vstim; congseq; cue]];
+          end
+
+        
+        
+        
+        
+%         asynch=[];
+%         for ss=1:length(stim.asynch)
+%           asynch=[asynch ss*ones(1,stim.motcnd)];
+%         end
+%         if length(stim.loc)==2
+%           astim=repmat([1 2 1 2],1,length(stim.asynch));
+%           vstim=repmat([1 2 2 1],1,length(stim.asynch));
+%         else
+%           error('write stim sequence for other than 2 stim locations')
+%         end
+%         congseq=vstim==astim;
+%         savc=repmat([asynch; astim; vstim; congseq],[1 setup.mtrlpercnd]);
         savc=repmat(savc,[1 length(stim.isi_flip)]);
         savc(size(savc,1)+1,:)=sort(repmat(1:length(stim.isi_flip),[1 size(savc,2)/length(stim.isi_flip)]));
         savc=repmat(savc,[1 length(stim.dur_flip)]);
