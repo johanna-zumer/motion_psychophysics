@@ -1063,9 +1063,18 @@ end
 
 clearvars -except *dir
 close all;
-subuse=[31:38 100:102 104:106 1001:1002];
+subuse=[31:38 100 1002 101 1001 102 104:109];
+
+% threshold for % correct motion direction, collapsed over ComSrc response
+nocuethresh=0.75;
+cuethresh=[0.7 0.8];
+finalthresh=1.5;
+locthresh=10;
 
 subind=0;
+
+includesubj=nan(length(subuse),2);
+
 for ii=subuse
   subind=subind+1;
   if ii>1000
@@ -1091,6 +1100,7 @@ for ii=subuse
     
   % without cue
   cnt=0;
+  clear *tmp
   for ff=1:length(avfile)
     load(avfile(ff).name);
     if strcmp(setup.paradigm,'cued')  % do blocks with cue separately
@@ -1122,9 +1132,14 @@ for ii=subuse
 %   comsrcd_all(subind,:)=nanmean(comsrcd_tmp,1);
 %   comsrcMD_all(subind,:)=nanmean(comsrcMD_tmp,1);
   
+  % threshold for inclusion:
+  includesubj(subind,1)=[nansum(percorcomsrccong_all(subind,[1 3]).*percorcomsrccongN_all(subind,[1 3]),2) ]./[nansum(percorcomsrccongN_all(subind,[1 3]),2)]>nocuethresh;
+  avnocue_loc(subind)=max(stim.loc);  % using last of block
+
   
   % with cue
   cnt=0;
+  clear *tmp
   for ff=1:length(avfile)
     load(avfile(ff).name);
     if strcmp(setup.paradigm,'nocue')  % do blocks without cue separately
@@ -1139,6 +1154,7 @@ for ii=subuse
     comsrcMD_percue_numer_tmp(cnt,:,:)=comsrcMDisidur_percue_numer;
     comsrcMD_percue_denom_tmp(cnt,:,:)=comsrcMDisidur_percue_denom;
   end
+  avcued_loc(subind)=max(stim.loc);  % using last of block
   if cnt>0
     percorcomsrccong_percue_all(subind,:,:)=squeeze(nansum(percorcomsrccong_percue_numer_tmp,1)./nansum(percorcomsrccong_percue_denom_tmp,1));
     percorcomsrccong_percueN_all(subind,:,:)=squeeze(nansum(percorcomsrccong_percue_denom_tmp,1));
@@ -1156,6 +1172,7 @@ for ii=subuse
     corCS_percue_all(subind,:,2)=nansum(nansum(comsrcMD_percue_numer_tmp(:,:,[3 4]),3),1)./nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[3 4]),3),1);
     corCS_percueN_all(subind,:,2)=nansum(nansum(comsrcMD_percue_denom_tmp(:,:,[3 4]),3),1);
     
+    includesubj(subind,2)=mean(corMD_percue_all(subind,:,1)>cuethresh);
   else
     percorcomsrccong_percue_all(subind,:,:)=nan(2,4);
     percorcomsrccong_percueN_all(subind,:,:)=nan(2,4);
@@ -1166,9 +1183,10 @@ for ii=subuse
     corMD_percueN_all(subind,:,:)=nan(2,2);
     corCS_percue_all(subind,:,:)=nan(2,2);
     corCS_percueN_all(subind,:,:)=nan(2,2);
+    
+    includesubj(subind,2)=nan;
   end
   
-
 end
 
 % order of columns in percorcomsrccong_all is less intuitive.  reorder.
@@ -1198,6 +1216,7 @@ corCSN_all=[nansum(comsrcMDN_all_norm(:,1:2),2) nansum(comsrcMDN_all_norm(:,3:4)
 
 close all
 figind=1;
+
 figure(figind);figind=figind+1;
 subplot(2,1,1);bar(corMD_all');ylabel('% correct of motion direction');xlabel('Cong, Incong');axis([-inf inf 0 1]);
 subplot(2,1,2);bar(corMDN_all');ylabel('% of trials');axis([-inf inf 0 0.55]);
@@ -1282,23 +1301,36 @@ subplot(2,2,4);bar(squeeze(comsrcMD_percueN_all_norm(:,2,:))');ylabel('% of tria
 %                 column3 - grouping variable for factor 1
 %                 column4 - grouping variable for factor 2
 nsub=size(corMD_percue_all(7:end,:,:),1);
-data(:,1)=reshape(corMD_percue_all(7:end,:,:),[nsub*2*2 1])
+data(:,1)=reshape(corMD_percue_all(7:end,:,:),[nsub*2*2 1]);
 data(:,2)=[1:nsub 1:nsub 1:nsub 1:nsub];
 data(:,3)=[ones(nsub*2,1); 2*ones(nsub*2,1)]; % congruency
 data(:,4)=[ones(nsub,1); 2*ones(nsub,1); ones(nsub,1); 2*ones(nsub,1)]; % cue
-stats = rmanova2(data,.05,0,1);
+stats = rmanova2(data,.05,0,1)
+% data(:,1)=reshape(corMD_percueN_all(7:end,:,:),[nsub*2*2 1]);
+% stats = rmanova2(data,.05,0,1)
+data(:,1)=reshape(corCS_percue_all(7:end,:,:),[nsub*2*2 1]);
+stats = rmanova2(data,.05,0,1)
+tmp=[squeeze(corCS_percue_all(:,:,1)) 1-squeeze(corCS_percue_all(:,:,2))];
+data(:,1)=reshape(tmp(7:end,:,:),[nsub*2*2 1]);
+stats = rmanova2(data,.05,0,1)
+
 
 % Three-way RM anova (congruency, cue, comsrc-cor)
 % Following: http://uk.mathworks.com/matlabcentral/answers/140799-3-way-repeated-measures-anova-pairwise-comparisons-using-multcompare
 percormotdir=reshape(percorcomsrccong_percue_all(end-nsub+1:end,:,:),[nsub 8]);
 varNames = {'LC_Con_CSyes','HC_Con_CSyes','LC_Con_CSno','HC_Con_CSno','LC_Inc_CSno','HC_Inc_CSno','LC_Inc_CSyes','HC_Inc_CSyes'};
 t = array2table(percormotdir,'VariableNames',varNames);
-
 factorNames = {'Cue','Congruency','ComSrcResp'};
 within = table({'L';'H';'L';'H';'L';'H';'L';'H'},{'C';'C';'C';'C';'I';'I';'I';'I'},{'Y';'Y';'N';'N';'Y';'Y';'N';'N'},'VariableNames',factorNames);
-
 rm = fitrm(t,'LC_Con_CSyes-HC_Inc_CSyes~1','WithinDesign',within);
-
 [ranovatbl] = ranova(rm, 'WithinModel','Cue*Congruency*ComSrcResp')
+
+percormotdir=reshape(percorcomsrccong_percueN_all(end-nsub+1:end,:,:),[nsub 8]);
+t = array2table(percormotdir,'VariableNames',varNames);
+rm = fitrm(t,'LC_Con_CSyes-HC_Inc_CSyes~1','WithinDesign',within);
+[ranovatbl] = ranova(rm, 'WithinModel','Cue*Congruency*ComSrcResp')
+
+% which participants to invite back for EEG
+subuse(sum(includesubj,2)>=finalthresh & avcued_loc'<=locthresh)
 
 
