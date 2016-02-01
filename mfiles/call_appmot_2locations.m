@@ -17,7 +17,7 @@ setup.alocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'm
 
 setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
 
-setup.paradigm='nocue'; % 'nocue' or 'cued'
+setup.paradigm='cued'; % 'nocue' or 'cued'
 stim.nocueaudonly=1/10; % percentage of no-cue trials which are aud-only; set to zero if all trials are AV
 
 setup.cuetrain=0; % =1 on, =0 off;  only works if paradigm is 'cued'
@@ -26,6 +26,8 @@ stim.cueprob=[3/10 6/10]; % only for 'cued' condition; percentages (0-1) of cong
 stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to zero if all trials are AV
 setup.cueord=[1 2]; % [1 2] or [2 1]
 
+setup.respcertMD=1; % (for MotDir question) =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
+setup.respcertCS=1; % (for ComSrc question0 =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
 
 stim.isi_flip=[0];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
 stim.dur_flip=[7];  % 3 means 50ms; 6 means 100ms [ 2 3 4]
@@ -35,7 +37,7 @@ stim.block='av'; % blocktype: 'av' or 'visonly' or 'audonly';
 % stim.block='audonly'; % blocktype: 'av' or 'visonly' or 'audonly';
 % stim.block='visonly'; % blocktype: 'av' or 'visonly' or 'audonly';
 
-setup.mtrlpercnd=1; % multisensory trials per condition
+setup.mtrlpercnd=3; % multisensory trials per condition
 setup.atrlpercnd=3; % auditory only trials per condition
 setup.vtrlpercnd=0; % visual only trials per condition
 

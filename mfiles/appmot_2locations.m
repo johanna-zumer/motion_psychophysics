@@ -589,16 +589,26 @@ KbName('UnifyKeyNames');
 % to exit the program
 quit   = KbName('ESCAPE');
 % defining keys for input
-loc1Key = KbName('j');    % corresponding to 'flicker' or 'same'
-loc2Key = KbName('k');    % corresponding to 'motion'
-loc3Key = KbName('l');    % corresponding to 'distinct' or 'different'
-loc4Key = KbName('s');    % corresponding to motion to the left
-loc5Key = KbName('f');    % corresponding to motion to the right
-loc6Key = KbName('d');    % corresponding to centretest
+loc1Key = KbName('j');    % corresponding to 'flicker' or (certain) 'same'
+loc2Key = KbName('k');    % corresponding to 'motion' (or uncertain 'same')
+loc3Key = KbName('l');    % corresponding to 'distinct' or (uncertain) 'different'
+loc4Key = KbName('s');    % corresponding to (uncertain) motion to the left
+loc5Key = KbName('f');    % corresponding to (certain) motion to the right
+loc6Key = KbName('d');    % corresponding to centretest (or uncertain motion to the right)
+loc7Key = KbName('a');    % corresponding to certain motion to the left
+loc8Key = KbName(';');    % corresponding to uncertain 'different'
 
 resp.motperkey=[loc1Key loc2Key loc3Key];
-resp.comsrckey=[loc1Key loc3Key];
-resp.motdirkey=[loc4Key loc5Key];
+if setup.respcertCS
+  resp.comsrckey=[loc1Key loc2Key loc3Key loc8Key];
+else
+  resp.comsrckey=[loc1Key loc3Key];
+end
+if setup.respcertMD
+  resp.motdirkey=[loc7Key loc4Key loc6Key loc5Key];
+else
+  resp.motdirkey=[loc4Key loc5Key];
+end
 resp.cuetrainkey=[loc6Key loc2Key];
 
 if setup.lj
@@ -611,7 +621,7 @@ end
 if setup.includeintro
   switch stim.block
     case {'av' 'audonly'}
-      keycode=zeros(max([quit,loc1Key,loc2Key,loc3Key,loc4Key,loc5Key,loc6Key]),1);
+      keycode=zeros(max([quit,loc1Key,loc2Key,loc3Key,loc4Key,loc5Key,loc6Key,loc7Key,loc8Key]),1);
       while ~keycode(loc4Key)
         Screen('DrawText', win,['Headphone test: 2 sounds on the Left (S) or Centre (D) or Right (F)?'], win_center_x-1*shifttext+macshift, win_center_y);
         [~,~,~,missed]=Screen('Flip',win);
@@ -756,19 +766,35 @@ end
 % Reminding of key responses
 flipcnt=0;
 fliptimecnt=0;
-RestrictKeysForKbCheck([quit,loc1Key,loc2Key,loc3Key,loc4Key,loc5Key,loc6Key]);
+RestrictKeysForKbCheck([quit,loc1Key,loc2Key,loc3Key,loc4Key,loc5Key,loc6Key,loc7Key,loc8Key]);
 switch stim.block
   case 'av'
-    resp.cormotdir(stim.av.atrialseq==1)=loc5Key; % motion starting on left moving to right
-    resp.cormotdir(stim.av.atrialseq==2)=loc4Key; % motion starting on right moving to left
+    motdirseq=stim.av.atrialseq;
+      
     switch setup.paradigm
-      case 'cued'
-        ntrials=stim.mtot;
-        if setup.askmotdir
-          Screen('DrawText', win,['Reminder: Sound moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue'], win_center_x-2*shifttext+macshift, win_center_y);
+      case 'nocue'
+        ntrials=stim.mreps;
+        flipmiss=zeros(1,ntrials+1);
+        if setup.askmotper
+          Screen('DrawText', win, ['Reminder: Flicker ' upper(KbName(resp.motperkey(1))) ', Motion ' upper(KbName(resp.motperkey(2))) ', Distinct ' upper(KbName(resp.motperkey(3))) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
           [~,~,~,missed]=Screen('Flip',win);
           KbPressWait;
         end
+    end
+    
+    if setup.askmotdir
+      if setup.respcertMD
+        Screen('DrawText', win,['Reminder: Sound moving to LEFT (certain) ' upper(KbName(loc7Key)) ' (uncertain) ' upper(KbName(loc4Key)) ' or RIGHT (uncertain) ' upper(KbName(loc6Key)) ' (certain) ' upper(KbName(loc5Key)) ' (Press to continue'], win_center_x-3*shifttext+macshift, win_center_y);
+      else
+        Screen('DrawText', win,['Reminder: Sound moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue'], win_center_x-2*shifttext+macshift, win_center_y);
+      end
+      [~,~,~,missed]=Screen('Flip',win);
+      KbPressWait;
+    end
+    
+    switch setup.paradigm
+      case 'cued'
+        ntrials=stim.mtot;
         for cc=1:length(stim.cueprob)
           cueprobshow=stim.cueprob(cc)/sum(stim.cueprob);
           switch setup.cuetype
@@ -782,36 +808,26 @@ switch stim.block
           [~,~,~,missed]=Screen('Flip',win);
           KbPressWait;
         end
-        if setup.askcomsrc
-          Screen('DrawText', win, ['Auditory and visual object same ' upper(KbName(loc1Key)) ' or different ' upper(KbName(loc3Key)) ' (Press to continue)'] , win_center_x-2*shifttext+macshift, win_center_y);
-          [~,~,~,missed]=Screen('Flip',win);
-          KbPressWait;
-          resp.corcong(stim.av.congseq==1)=loc1Key; % audvis congruent
-          resp.corcong(stim.av.congseq==0)=loc3Key; % audvis incongruent
-          resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq)=nan; % aud alone (so no response required)
-        end
-      case 'nocue'
-        ntrials=stim.mreps;
-        flipmiss=zeros(1,ntrials+1);
-        if setup.askmotper
-          Screen('DrawText', win, ['Reminder: Flicker ' upper(KbName(resp.motperkey(1))) ', Motion ' upper(KbName(resp.motperkey(2))) ', Distinct ' upper(KbName(resp.motperkey(3))) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
-          [~,~,~,missed]=Screen('Flip',win);
-          KbPressWait;
-        end
-        if setup.askmotdir
-          Screen('DrawText', win,['Reminder: Sound moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
-          [~,~,~,missed]=Screen('Flip',win);
-          KbPressWait;
-        end
-        if setup.askcomsrc
-          Screen('DrawText', win, ['Reminder: Sound and flash same ' upper(KbName(loc1Key)) ' or different ' upper(KbName(loc3Key)) ' (Press to continue)'] , win_center_x-2*shifttext+macshift, win_center_y);
-          [~,~,~,missed]=Screen('Flip',win);
-          KbPressWait;
-          resp.corcong(stim.av.congseq==1)=loc1Key; % audvis congruent
-          resp.corcong(stim.av.congseq==0)=loc3Key; % audvis incongruent
-          resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq)=nan; % aud alone (so no response required)
-        end
     end
+    
+    if setup.askcomsrc
+      if setup.respcertCS
+        Screen('DrawText', win, ['Auditory and visual object SAME (certain) ' upper(KbName(loc1Key)) ' (uncertain) ' upper(KbName(loc2Key)) ' or DIFFERENT (uncertain) ' upper(KbName(loc3Key)) ' (certain) ' KbName(loc8Key) ' (Press to continue)'] , win_center_x-3*shifttext+macshift, win_center_y);
+        resp.corcong(stim.av.congseq==1,1)=loc1Key; % audvis congruent (certain; uncertain)
+        resp.corcong(stim.av.congseq==1,2)=loc2Key; % audvis congruent (certain; uncertain)
+        resp.corcong(stim.av.congseq==0,1)=loc8Key; % audvis incongruent (certain; uncertain)
+        resp.corcong(stim.av.congseq==0,2)=loc3Key; % audvis incongruent (certain; uncertain)
+        resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq,1:2)=nan; % aud alone (so no response required)
+      else
+        Screen('DrawText', win, ['Auditory and visual object same ' upper(KbName(loc1Key)) ' or different ' upper(KbName(loc3Key)) ' (Press to continue)'] , win_center_x-2*shifttext+macshift, win_center_y);
+        resp.corcong(stim.av.congseq==1)=loc1Key; % audvis congruent
+        resp.corcong(stim.av.congseq==0)=loc3Key; % audvis incongruent
+        resp.corcong(stim.av.congseq==0 & ~stim.av.vtrialseq)=nan; % aud alone (so no response required)
+      end
+      [~,~,~,missed]=Screen('Flip',win);
+      KbPressWait;
+    end
+        
   case 'audonly'
     ntrials=stim.audio.areps;
     flipmiss=zeros(1,ntrials+1);
@@ -821,12 +837,17 @@ switch stim.block
       KbPressWait;
     end
     if setup.askmotdir
-      Screen('DrawText', win,['Reminder: Sound moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+      if setup.respcertMD
+        Screen('DrawText', win,['Reminder: Sound moving to left (certain) ' upper(KbName(loc7Key)) ' (uncertain) ' upper(KbName(loc4Key)) ' or right (uncertain) ' upper(KbName(loc6Key)) ' (certain) ' upper(KbName(loc5Key)) ' (Press to continue'], win_center_x-3*shifttext+macshift, win_center_y);
+      else
+        Screen('DrawText', win,['Reminder: Sound moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+      end
       [~,~,~,missed]=Screen('Flip',win);
       KbPressWait;
     end
-    resp.cormotdir(stim.audio.trialseq==1)=loc5Key; % motion starting on left moving to right
-    resp.cormotdir(stim.audio.trialseq==2)=loc4Key; % motion starting on right moving to left
+%     resp.cormotdir(stim.audio.trialseq==1)=loc5Key; % motion starting on left moving to right
+%     resp.cormotdir(stim.audio.trialseq==2)=loc4Key; % motion starting on right moving to left
+    motdirseq=stim.audio.trialseq;
   case 'visonly'
     ntrials=stim.vis.vreps;
     flipmiss=zeros(1,ntrials+1);
@@ -836,12 +857,27 @@ switch stim.block
       KbPressWait;
     end
     if setup.askmotdir
-      Screen('DrawText', win,['Reminder: Flash moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+      if setup.respcertMD
+        Screen('DrawText', win,['Reminder: Dot moving to left (certain) ' upper(KbName(loc7Key)) ' (uncertain) ' upper(KbName(loc4Key)) ' or right (uncertain) ' upper(KbName(loc6Key)) ' (certain) ' upper(KbName(loc5Key)) ' (Press to continue'], win_center_x-3*shifttext+macshift, win_center_y);
+      else
+        Screen('DrawText', win,['Reminder: Dot moving to left ' upper(KbName(loc4Key)) ' or right ' upper(KbName(loc5Key)) ' (Press to continue)'], win_center_x-2*shifttext+macshift, win_center_y);
+      end
       [~,~,~,missed]=Screen('Flip',win);
       KbPressWait;
     end
-    resp.cormotdir(stim.vis.trialseq==1)=loc5Key; % motion starting on left moving to right
-    resp.cormotdir(stim.vis.trialseq==2)=loc4Key; % motion starting on right moving to left
+%     resp.cormotdir(stim.vis.trialseq==1)=loc5Key; % motion starting on left moving to right
+%     resp.cormotdir(stim.vis.trialseq==2)=loc4Key; % motion starting on right moving to left
+    motdirseq=stim.vis.trialseq;
+end
+
+if setup.respcertMD
+  resp.cormotdir(motdirseq==1,1)=loc5Key; % motion to right (certain)
+  resp.cormotdir(motdirseq==1,2)=loc6Key; % motion to right (uncertain)
+  resp.cormotdir(motdirseq==2,1)=loc7Key; % motion to left (certain)
+  resp.cormotdir(motdirseq==2,2)=loc4Key; % motion to left (uncertain)
+else
+  resp.cormotdir(motdirseq==1)=loc5Key; % motion to right
+  resp.cormotdir(motdirseq==2)=loc4Key; % motion to left
 end
 
 
@@ -1176,7 +1212,11 @@ try
         lj.prepareStrobe(61) %prepare a strobed word
         lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
       end
-      RestrictKeysForKbCheck([quit,loc4Key,loc5Key]);
+      if setup.respcertMD
+        RestrictKeysForKbCheck([quit,loc4Key,loc5Key,loc6Key,loc7Key]);
+      else
+        RestrictKeysForKbCheck([quit,loc4Key,loc5Key]);
+      end
       [resp.rtmotdir(itrial),keycode]=KbWait([],2,poststimtime+setup.maxtime4motdir);
       [~,~,keyCode] = KbCheck;
       if find(keycode)
@@ -1218,7 +1258,11 @@ try
               lj.prepareStrobe(62) %prepare a strobed word
               lj.strobeWord %send the strobed word, which is 11bit max length on EIO and CIO via the DB15
             end
-            RestrictKeysForKbCheck([quit,loc1Key,loc3Key]);
+            if setup.respcertCS
+              RestrictKeysForKbCheck([quit,loc1Key,loc3Key,loc2Key,loc8Key]);
+            else
+              RestrictKeysForKbCheck([quit,loc1Key,loc3Key]);
+            end
             [resp.rtcomsrc(itrial),keycode]=KbWait([],2,postfliptime+setup.maxtime4comsrc);
             if find(keycode)
               resp.comsrckeycode(itrial)=find(keycode);
