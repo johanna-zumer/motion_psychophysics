@@ -1063,7 +1063,7 @@ end
 
 clearvars -except *dir
 close all;
-subuse=[31:38 100 1002 101 1001 102 104:109];
+subuse=[31:38 100 1002 101 1001 102 104:111];
 
 % threshold for % correct motion direction, collapsed over ComSrc response
 nocuethresh=0.75;
@@ -1332,5 +1332,6 @@ rm = fitrm(t,'LC_Con_CSyes-HC_Inc_CSyes~1','WithinDesign',within);
 
 % which participants to invite back for EEG
 subuse(sum(includesubj,2)>=finalthresh & avcued_loc'<=locthresh)
+subuse(sum(includesubj,2)>=finalthresh & avcued_loc'<=locthresh & corMD_percue_all(:,1,2)-corMD_percue_all(:,2,2)>.1)
 
 
