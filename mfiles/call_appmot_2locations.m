@@ -6,28 +6,32 @@ clear all;
 
 %% changeable params per experiment
 
-setup.subid='test';
+setup.subid='m18';
 % setup.headwidth=.155; % in m     % JZ=.145        % These 4 params were used by Rohe 2015 with CIPIC
 % setup.headdepth=.195;             % JZ=.18
 % setup.headcircumference=.59;     % JZ=.56
 % setup.headheight=.225;           % JZ=.215
 
-setup.vlocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
-setup.alocation='office'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.vlocation='meg'; % 'office' or 'mri' or 'mock' or '313a' or 'mac' or 'meg'
+setup.alocation='meg'; % 'mac_hp' or 'mac_et' or 'meg' or 'office' or 'mri' or 'mock' or '313a'
+setup.rlocation='meg'; % responses: 'meg' for forp in MEG, or 'mac' for keyboard ('macold' for EEG/Bham way of doing it)
+% 'mac' also works on MEGstimPC for normal keyboard
 
-setup.lj=0;  % =1 for yes use Labjack, and =0 for no don't use Labjack
+setup.respcertMD=1; % (for MotDir question) =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
+setup.respcertCS=0; % (for ComSrc question0 =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
+
+setup.lj=1;  % =1 for yes use Labjack, and =0 for no don't use Labjack
+setup.el.enable=1;  % =1 for yes use EyeLink, and =0 for no don't use EyeLink
+setup.el.fb='trial'; % 'trial' or 'block'
 
 setup.paradigm='cued'; % 'nocue' or 'cued'
 stim.nocueaudonly=1/10; % percentage of no-cue trials which are aud-only; set to zero if all trials are AV
 
 setup.cuetrain=0; % =1 on, =0 off;  only works if paradigm is 'cued'
-setup.cuetype='aud'; % aud or vis
+setup.cuetype='audcong'; % audcong or audmod or vis
 stim.cueprob=[3/10 6/10]; % only for 'cued' condition; percentages (0-1) of congruency likelihood % cue percentages best if such that numerators stay small  (e.g. not 7/10)
 stim.cuedaudonly=1/10;  % percentage of cued trials which are aud-only; set to zero if all trials are AV
 setup.cueord=[1 2]; % [1 2] or [2 1]
-
-setup.respcertMD=1; % (for MotDir question) =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
-setup.respcertCS=1; % (for ComSrc question0 =1 means 4-button response including certainty;  =0 means 2-button response for simply left/right
 
 stim.isi_flip=[0];  % titrate this with piloting, but leave fixed for final; (1 flip is 16.7ms); [1 2 3 4]
 stim.dur_flip=[7];  % 3 means 50ms; 6 means 100ms [ 2 3 4]
@@ -45,18 +49,18 @@ stim.audio.stim='brownnoise'; % 'tone' or 'whitenoise' or 'noisytone'
 stim.backepi=0; % is background EPI noise playing?
 stim.audio.type='MIT'; % 'ITD' or 'ILD' or 'ILDITD' or 'cipic' or 'MIT' or 'rec'
 
-stim.loc=sort([-7 7]); % degrees; rest of code assumes this is sorted left to right
+stim.loc=sort([-3 3]); % degrees; rest of code assumes this is sorted left to right
 
 stim.feedback=[0 0];  % [0 0] for no feedback; [X Y] means skip X trials then do feedback based on Y trials
 
 setup.timingtesting=0;
 
-setup.av.askfmdcs=1; % =0 means ask FMD, =1 means ask CS, =2 means Both FMD & CS
+setup.av.askfmdcs=3; % =0 means ask FMD, =1 means ask CS, =2 means Both FMD & CS, =3 means don't ask either FMD or CS
 
-setup.includeintro=1;
+setup.includeintro=0;
 
 if setup.timingtesting
-  stim.vis.diam=0.8;  % degrees
+  stim.vis.diam=5;  % degrees
 else
 %   stim.vis.diam=0.2;  % 1.5 or 0.2 degrees
 %   stim.vis.diam=0.8;  % 1.5 or 0.2 degrees
@@ -76,6 +80,11 @@ if setup.lj
   end
 end
 
+if ~setup.lj && strcmp(setup.vlocation,'meg')
+  warning('do you want labjack on?')
+  keyboard
+end
+  
 
 %% Paths
 % Debug mode
@@ -92,6 +101,13 @@ catch
   setup.name=setup.vlocation;
 end
     
+switch setup.rlocation
+  case 'meg'
+    if setup.respcertCS==1
+      error('Cannot record uncertainty of CS question with MEG response boxes')
+    end
+end
+
 
 % write this later
 % mypath=setupdirs(subid);
@@ -101,30 +117,34 @@ switch setup.name
   case 'PSYCHL-132432'
     setup.rdir='D:\motion_psychophysics\';
     setup.debug = 1; % PTB
-  case 'NopBook03.local'
+  case {'NopBook03.local' 'nopbook03.local'}
     setup.rdir='/Users/zumerj/Documents/MATLAB/motion_psychophysics/';
-  case 'NopBook2.local'
+  case {'NopBook2.local' 'nopbook2.local'}
     setup.rdir='/Users/zumerj/Documents/MATLAB/motion_psychophysics/';
   case 'PPPMEGSTIM'
-      setup.rdir='C:\Users\MEGuser\Documents\Johanna\MultSens_ISMINO\motion_psychophysics\';
+      setup.rdir='C:\Users\MEGuser\Documents\Johanna\MultSens_ISMINO\';
   otherwise
     error('what computer are you on?')
 end
 if ispc
-  bdir=[setup.rdir 'behav_data\'];
+  setup.bdir=[setup.rdir 'behav_data\'];
   pdir=[setup.rdir 'behav_data\presentation\'];
   mjdir=[setup.rdir 'behav_data\presentation\MatlabGarbageCollector'];
+  setup.edir=[setup.rdir 'eyelink_data\'];
+  cd(setup.edir) % just to test it exists
 else
-  bdir=[setup.rdir 'behav_data/'];
+  setup.bdir=[setup.rdir 'behav_data/'];
   pdir=[setup.rdir 'behav_data/presentation/'];
   mjdir=[setup.rdir 'behav_data/presentation/MatlabGarbageCollector'];
+  setup.edir=[setup.rdir 'eyelink_data/'];
+  cd(setup.edir) % just to test it exists
 end
 
 
 % Adding MatlabGarbageCollector.jar to the dynamic java path
 % javaaddpath(fullfile(mypath.root,'presentation','MatlabGarbageCollector.jar'));
 javaaddpath(mjdir);
-cd(bdir)
+cd(setup.bdir)
 
 addpath(genpath(setup.rdir));
 
@@ -297,6 +317,7 @@ switch setup.paradigm
     else
       stim.motcnd=size(stim.loc,2)^2; % 4 multsens motion conditions for 2 locations
       stim.mreps=setup.mtrlpercnd*stim.motcnd*length(stim.asynch);
+      audratios=[1];
     end
     %     stim.onsetjitter=stim.time_to_onset_addedrange*rand(1,stim.mreps);
 end
@@ -342,24 +363,24 @@ elseif strcmp(setup.name, 'COLLES-140591')
   else
     stim.audio.vol = 0.05; % with computer volume set to halfway
   end
-elseif strcmp(setup.name, 'NopBook03.local') || strcmp(setup.name, 'NopBook2.local')
-  if setup.timingtesting
-    stim.audio.vol = 2;
-  else
-    stim.audio.vol = 0.3;
+elseif strcmp(setup.name, 'NopBook03.local') || strcmp(setup.name, 'NopBook2.local') || strcmp(setup.name,'nopbook2.local') || strcmp(setup.name,'nopbook03.local')
+  switch setup.alocation
+    case 'meg'
+      stim.audio.vol = 10;
+    case 'mac_hp'
+      stim.audio.vol = 0.3;
+    case 'mac_et'
+      stim.aduio.vol = 0.3;
+    otherwise 
+      error('where is your alocation?');
   end
 else
   warning('using default volume')
   %     stim.audio.vol = 0.06; % 0.08->75 dB 0.18
   stim.audio.vol = 0.3; % 0.08->75 dB 0.18
 end
-switch setup.alocation
-  case 'meg'  % with Notts tubes
-    if setup.timingtesting
-      stim.audio.vol = 60*stim.audio.vol; 
-    else
-      stim.audio.vol = 20*stim.audio.vol;
-    end
+if setup.timingtesting
+  stim.audio.vol = 7 * stim.audio.vol;
 end
 
 
@@ -390,7 +411,7 @@ end
 if strcmp(stim.audio.type, 'rec')
   %     stim.rec.cutoff = 0.6;
   %     stim.rec.bp = {1800 15000};
-  [subj, stim] = getaudio(subj, bdir, stim, 'rec');
+  [subj, stim] = getaudio(subj, setup.bdir, stim, 'rec');
 end
 
 stim.audio.lat.lev = 1;
@@ -457,7 +478,7 @@ switch stim.block
         stim.av.atrialseq=savc(2,morder);
         stim.av.vtrialseq=savc(3,morder);
         stim.av.congseq=savc(4,morder);
-        stim.av.cueseq=savc(5,morder);
+        stim.av.cueseq=savc(5,morder); % index refers to stim.cueprob
         stim.isiseq=savc(6,morder);
         stim.durseq=savc(7,morder);
         stim.onsetjitter=stim.time_to_onset_addedrange*rand(1,stim.mtot);
@@ -601,6 +622,9 @@ switch stim.block
     elseif setup.av.askfmdcs==2; % =0 means ask FMD, =1 means ask CS
       setup.askcomsrc=1;
       setup.askmotper=1;
+    elseif setup.av.askfmdcs==3; % don't ask either
+      setup.askcomsrc=0;
+      setup.askmotper=0;
     end
 end    
 
@@ -622,8 +646,17 @@ end
 %   error('stim.ave.cuefreq and stim.cueprob must be same length')
 % end
 
+%% EyeLink default params (also 2 set up in beginning section)
+% see section iin appmot_2locations.m
+% setup.el.dummy     = 0;
+% setup.edfFlag           = '-e';    % -e only convert event samples to asc format (edf still contains everything)
+% setup.el.fixdeg    = 5;       % move up until fixdeg degrees away from absoluate central position (512, 384)
+% setup.el.driftdeg  = 1;       % allowed discrepancy from center during drift check
+
+
 
 %% run experiment
+disp('got here')
 if setup.lj
   [resp,stim,setup] = appmot_2locations(setup,stim,lj);
 else
